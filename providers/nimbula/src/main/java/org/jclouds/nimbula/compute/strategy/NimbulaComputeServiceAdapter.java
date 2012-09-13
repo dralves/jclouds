@@ -51,7 +51,7 @@ public class NimbulaComputeServiceAdapter implements ComputeServiceAdapter<Insta
         Instance instance = new Instance.Builder()
                 .shape(DEFAULT_SHAPE)
                 .imageList(DEFAULT_IMAGE)
-                .addTag(group)
+                .addTags(template.getOptions().getTags())
                 .label(name)
                 .build();
         instance = Iterables.getOnlyElement(this.client.getInstanceApi().launch(

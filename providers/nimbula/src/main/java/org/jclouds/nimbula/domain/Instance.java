@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.beans.ConstructorProperties;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +57,11 @@ public class Instance {
 
         public Builder addTag(String tag) {
             this.tags.add(tag);
+            return this;
+        }
+
+        public Builder addTags(Collection<String> tags) {
+            this.tags.addAll(tags);
             return this;
         }
 
