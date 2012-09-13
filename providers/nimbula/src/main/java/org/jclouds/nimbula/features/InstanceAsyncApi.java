@@ -6,6 +6,8 @@ import org.jclouds.nimbula.domain.LaunchPlan;
 import org.jclouds.nimbula.handlers.CookieAuthentication;
 import org.jclouds.rest.annotations.*;
 import org.jclouds.rest.binders.BindToJsonPayload;
+import org.jclouds.rest.functions.ReturnEmptySetOnNotFoundOr404;
+import org.jclouds.rest.functions.ReturnNullOnNotFoundOr404;
 
 import javax.ws.rs.*;
 import java.util.Set;
@@ -30,6 +32,7 @@ public interface InstanceAsyncApi {
     @Unwrap
     @Path("/instance{container}")
     @Consumes(NIMBULA_MEDIA_TYPE)
+    @ExceptionParser(ReturnEmptySetOnNotFoundOr404.class)
     public ListenableFuture<Set<Instance>> list(@PathParam("container") String container);
 
     /**
@@ -38,6 +41,7 @@ public interface InstanceAsyncApi {
     @GET
     @Path("/instance{name}")
     @Consumes(NIMBULA_MEDIA_TYPE)
+    @ExceptionParser(ReturnNullOnNotFoundOr404.class)
     public ListenableFuture<Instance> get(@PathParam("name") String name);
 
 

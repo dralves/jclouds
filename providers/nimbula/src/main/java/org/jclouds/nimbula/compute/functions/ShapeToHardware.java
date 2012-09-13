@@ -12,6 +12,8 @@ public class ShapeToHardware implements Function<Shape, Hardware> {
         return new HardwareBuilder()
                 .id(input.getName())
                 .processor(new Processor(input.getCpus(), 1))
-                .ram(input.getRam()).build();
+                .ram(input.getRam())
+                .providerId("nimbula")
+                .build();
     }
 }

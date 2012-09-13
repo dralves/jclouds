@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkState;
 @Singleton
 public class NimbulaComputeServiceAdapter implements ComputeServiceAdapter<Instance, Shape, MachineImage, Location> {
 
+
     // TODO allow to parameterize
     private static String PUBLIC_IMAGES_LOCATION = "/nimbula/public/";
     private static String DEFAULT_SHAPE = "large";
@@ -55,7 +56,7 @@ public class NimbulaComputeServiceAdapter implements ComputeServiceAdapter<Insta
                 .build();
         instance = Iterables.getOnlyElement(this.client.getInstanceApi().launch(
                 new LaunchPlan.Builder().addInstance(instance).build()).getInstances());
-        checkState(imageStatePredicate.apply(instance), " instance never reached RUNNING stage");
+        checkState(imageStatePredicate.apply(instance), " instance never reached RUNNING state");
         instance = getNode(instance.getName());
         return new NodeAndInitialCredentials<Instance>(instance, instance.getName(),
                 LoginCredentials.builder().identity("root").password("nimbula").build());

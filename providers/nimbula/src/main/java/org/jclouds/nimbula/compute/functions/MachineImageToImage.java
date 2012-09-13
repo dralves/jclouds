@@ -21,6 +21,7 @@ public class MachineImageToImage implements Function<MachineImage, Image> {
                         .description("ubuntu").build())
                 .description("ubuntu x64 uknown version")
                 .status(Image.Status.AVAILABLE)
+                .providerId("nimbula")
                 .build();
     }
 }
