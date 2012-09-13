@@ -190,11 +190,11 @@ public class RestAnnotationProcessor<T> {
    static final LoadingCache<Method, LoadingCache<Integer, Set<Annotation>>> methodToIndexOfParamToPostParamAnnotations = createMethodToIndexOfParamToAnnotation(PayloadParam.class);
    static final LoadingCache<Method, LoadingCache<Integer, Set<Annotation>>> methodToIndexOfParamToPartParamAnnotations = createMethodToIndexOfParamToAnnotation(PartParam.class);
    static final LoadingCache<Method, LoadingCache<Integer, Set<Annotation>>> methodToIndexOfParamToParamParserAnnotations = createMethodToIndexOfParamToAnnotation(ParamParser.class);
-   
+
    /**
     * Shared for all types of rest clients. this is read-only in this class, and
     * currently populated only by {@link SeedAnnotationCache}
-    * 
+    *
     * @see SeedAnnotationCache
     */
    // TODO: change this to a private final LoadingCache<MethodKey, Method>
@@ -370,7 +370,7 @@ public class RestAnnotationProcessor<T> {
                && Objects.equal(this.name, that.name)
                && Objects.equal(this.parametersTypeHashCode, that.parametersTypeHashCode);
       }
-      
+
       private final String name;
       private final int parametersTypeHashCode;
       private final Class<?> declaringClass;
@@ -822,7 +822,17 @@ public class RestAnnotationProcessor<T> {
          } else if (method.getReturnType().equals(HttpResponse.class)
                || TypeLiteral.get(method.getGenericReturnType()).equals(futureHttpResponseLiteral)) {
             return Key.get(Class.class.cast(IdentityFunction.class));
-         } else if (getAcceptHeadersOrNull(method).contains(MediaType.APPLICATION_JSON)) {
+             // accommodate cases where the subtype includes (but is not simply) "json"
+			} else if (Iterables.tryFind(
+			   getAcceptHeadersOrNull(method), new Predicate<String>() {
+				   @Override
+				   public boolean apply(String input) {
+					   return input.startsWith(MediaType.APPLICATION_JSON_TYPE
+					                           .getType())
+					                           && input.contains(MediaType.APPLICATION_JSON_TYPE
+					                                                   .getSubtype());
+				   }
+			   }).isPresent()) {
             return getJsonParserKeyForMethod(method);
          } else if (getAcceptHeadersOrNull(method).contains(MediaType.APPLICATION_XML)
                 || method.isAnnotationPresent(JAXBResponseParser.class)) {
@@ -834,7 +844,7 @@ public class RestAnnotationProcessor<T> {
                || TypeLiteral.get(method.getGenericReturnType()).equals(futureURILiteral)) {
             return Key.get(ParseURIFromListOrLocationHeaderIf20x.class);
          } else {
-            throw new IllegalStateException("You must specify a ResponseParser annotation on: " + method.toString());
+            throw new IllegalStateException(MediaType.APPLICATION_JSON_TYPE.getSubtype()+ " " +getAcceptHeadersOrNull(method)+  " You must specify a ResponseParser annotation on: " + method.toString());
          }
       }
       return Key.get(annotation.value());
@@ -844,7 +854,7 @@ public class RestAnnotationProcessor<T> {
       Type returnVal = getReturnTypeForMethod(method);
       return getJsonParserKeyForMethodAnType(method, returnVal);
    }
-   
+
    @SuppressWarnings("unchecked")
    public static Key<? extends Function<HttpResponse, ?>> getJAXBParserKeyForMethod(Method method) {
        Type returnVal = getReturnTypeForMethod(method);
@@ -918,7 +928,7 @@ public class RestAnnotationProcessor<T> {
          return injector.getInstance(BindMapToStringPayload.class);
       } else if (method.isAnnotationPresent(WrapWith.class)) {
          return injector.getInstance(BindToJsonPayloadWrappedWith.Factory.class).create(
-            method.getAnnotation(WrapWith.class).value());
+                 method.getAnnotation(WrapWith.class).value());
       }
       return null;
    }
