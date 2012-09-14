@@ -13,12 +13,13 @@ import org.jclouds.nimbula.domain.LaunchPlan;
 import org.jclouds.nimbula.domain.MachineImage;
 import org.jclouds.nimbula.domain.Shape;
 import org.jclouds.predicates.RetryablePredicate;
+import org.jclouds.rest.annotations.Credential;
+import org.jclouds.rest.annotations.Identity;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 @Singleton
@@ -38,12 +39,12 @@ public class NimbulaComputeServiceAdapter implements ComputeServiceAdapter<Insta
 
 
     @Inject
-    public NimbulaComputeServiceAdapter(NimbulaClient client) {
+    public NimbulaComputeServiceAdapter(NimbulaClient client, @Identity String user, @Credential String password) {
         this.client = client;
         this.imagesLocation = PUBLIC_IMAGES_LOCATION;
         this.imageStatePredicate = new RetryablePredicate<Instance>(new InstanceIsRunningPredicate(client), 600000);
-        this.identity = checkNotNull(System.getProperty("nimbula.identity"));
-        this.credential = checkNotNull(System.getProperty("nimbula.credential"));
+        this.identity = user;
+        this.credential = password;
     }
 
     @Override

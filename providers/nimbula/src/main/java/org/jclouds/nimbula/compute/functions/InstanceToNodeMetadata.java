@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.compute.domain.NodeMetadataBuilder;
+import org.jclouds.compute.functions.GroupNamingConvention;
 import org.jclouds.domain.Location;
 import org.jclouds.domain.LoginCredentials;
 import org.jclouds.nimbula.domain.Instance;
@@ -15,13 +16,18 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class InstanceToNodeMetadata implements Function<Instance, NodeMetadata> {
 
     private Map<InstanceStatus, NodeMetadata.Status> statusMap;
     private Supplier<Location> locationSupplier;
+    private GroupNamingConvention nodeNamingConvention;
 
     @Inject
-    public InstanceToNodeMetadata(Map<InstanceStatus, NodeMetadata.Status> map, Supplier<Location> locationSupplier) {
+    public InstanceToNodeMetadata(Map<InstanceStatus, NodeMetadata.Status> map, Supplier<Location> locationSupplier,
+                                  GroupNamingConvention.Factory namingConvention) {
+        this.nodeNamingConvention = checkNotNull(namingConvention, "namingConvention").createWithoutPrefix();
         this.statusMap = map;
         this.locationSupplier = locationSupplier;
     }
@@ -39,7 +45,7 @@ public class InstanceToNodeMetadata implements Function<Instance, NodeMetadata> 
                 .tags(input.getTags())
                 .providerId("nimbula")
                 .uri(URI.create(input.getUri()))
-                .group(Iterables.get(input.getTags(), 0))
+                .group(nodeNamingConvention.groupInUniqueNameOrNull(input.getLabel()))
                 .name(input.getLabel())
                 .build();
     }

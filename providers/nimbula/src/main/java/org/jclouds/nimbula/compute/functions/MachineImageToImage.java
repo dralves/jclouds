@@ -34,6 +34,7 @@ public class MachineImageToImage implements Function<MachineImage, Image> {
                 .status(Image.Status.AVAILABLE)
                 .location(locationSupplier.get())
                 .providerId("nimbula")
+                .name(input.getName())
                 .build();
     }
 }
