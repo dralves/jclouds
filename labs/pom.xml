@@ -52,6 +52,7 @@
        <module>iam</module>
        <module>aws-iam</module>
        <module>nodepool</module>
+       <module>nimbula</module>
        <module>rds</module>
        <module>aws-rds</module>
        <module>smartos-ssh</module>
