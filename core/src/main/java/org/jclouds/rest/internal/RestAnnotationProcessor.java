@@ -820,11 +820,10 @@ public class RestAnnotationProcessor<T> {
 			} else if (Iterables.tryFind(
 			   getAcceptHeadersOrNull(method), new Predicate<String>() {
 				   @Override
+                   // TODO MediaType's Type and SubType are hardcoded because using MediaType causes an error: java.lang.ClassNotFoundException: com.sun.ws.rs.ext.RuntimeDelegateImpl
 				   public boolean apply(String input) {
-					   return input.startsWith(MediaType.APPLICATION_JSON_TYPE
-					                           .getType())
-					                           && input.contains(MediaType.APPLICATION_JSON_TYPE
-					                                                   .getSubtype());
+					   return input.startsWith("application")
+					                           && input.contains("json");
 				   }
 			   }).isPresent()) {
             return getJsonParserKeyForMethod(method);
@@ -838,7 +837,7 @@ public class RestAnnotationProcessor<T> {
                || TypeLiteral.get(method.getGenericReturnType()).equals(futureURILiteral)) {
             return Key.get(ParseURIFromListOrLocationHeaderIf20x.class);
          } else {
-            throw new IllegalStateException(MediaType.APPLICATION_JSON_TYPE.getSubtype()+ " " +getAcceptHeadersOrNull(method)+  " You must specify a ResponseParser annotation on: " + method.toString());
+            throw new IllegalStateException(getAcceptHeadersOrNull(method)+  " You must specify a ResponseParser annotation on: " + method.toString());
          }
       }
       return Key.get(annotation.value());
