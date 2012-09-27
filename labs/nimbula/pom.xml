@@ -66,12 +66,6 @@
             <groupId>org.jclouds</groupId>
             <artifactId>jclouds-core</artifactId>
             <version>${jclouds.version}</version>
-            <exclusions>
-              <exclusion>
-                <artifactId>jersey-core</artifactId>
-                <groupId>com.sun.jersey</groupId>
-              </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jclouds</groupId>
@@ -79,17 +73,6 @@
             <version>${jclouds.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
-            <exclusions>
-              <exclusion>
-                <artifactId>jersey-core</artifactId>
-                <groupId>com.sun.jersey</groupId>
-              </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.servicemix.specs</groupId>
-            <artifactId>org.apache.servicemix.specs.jsr311-api-1.1.1</artifactId>
-            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.jclouds</groupId>
