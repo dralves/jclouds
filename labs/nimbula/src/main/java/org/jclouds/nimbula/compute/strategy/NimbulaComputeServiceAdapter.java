@@ -57,7 +57,6 @@ public class NimbulaComputeServiceAdapter implements ComputeServiceAdapter<Insta
                 .build();
         instance = Iterables.getOnlyElement(this.client.getInstanceApi().launch(
                 new LaunchPlan.Builder().addInstance(instance).build()).getInstances());
-        checkState(imageStatePredicate.apply(instance), " instance never reached RUNNING state");
         instance = getNode(instance.getName());
         return new NodeAndInitialCredentials<Instance>(instance, instance.getName(),
                 LoginCredentials.builder().identity("root").password("nimbula").build());

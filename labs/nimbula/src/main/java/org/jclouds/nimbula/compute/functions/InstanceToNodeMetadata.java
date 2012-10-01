@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.compute.domain.NodeMetadataBuilder;
+import org.jclouds.compute.domain.OperatingSystem;
+import org.jclouds.compute.domain.OsFamily;
 import org.jclouds.compute.functions.GroupNamingConvention;
 import org.jclouds.domain.Location;
 import org.jclouds.domain.LoginCredentials;
@@ -38,6 +40,13 @@ public class InstanceToNodeMetadata implements Function<Instance, NodeMetadata> 
                 .credentials(LoginCredentials.builder().user("root").password("nimbula").build())
                 .publicAddresses(ImmutableSet.of(input.getIp()))
                 .privateAddresses(ImmutableSet.of(input.getIp()))
+                // TODO this is hardcoded to match MachineImageToImage
+                .operatingSystem(OperatingSystem.builder()
+                        .family(OsFamily.UBUNTU)
+                        .is64Bit(true)
+                        .arch("x86_64")
+                        .version("12.04")
+                        .description("ubuntu").build())
                 .status(statusMap.get(input.getState()))
                 .location(locationSupplier.get())
                 .backendStatus("running")

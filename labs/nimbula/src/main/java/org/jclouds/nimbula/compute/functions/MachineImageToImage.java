@@ -28,11 +28,12 @@ public class MachineImageToImage implements Function<MachineImage, Image> {
                 .operatingSystem(OperatingSystem.builder()
                         .family(OsFamily.UBUNTU)
                         .is64Bit(true)
+                        .arch("x86_64")
                         .version("12.04")
                         .description("ubuntu").build())
-                .description("ubuntu x64 uknown version")
                 .status(Image.Status.AVAILABLE)
                 .location(locationSupplier.get())
+                .description("defautl nimbuma image")
                 .providerId("nimbula")
                 .name(input.getName())
                 .build();
