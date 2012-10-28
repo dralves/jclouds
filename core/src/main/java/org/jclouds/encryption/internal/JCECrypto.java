@@ -18,14 +18,8 @@
  */
 package org.jclouds.encryption.internal;
 
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import org.jclouds.crypto.Crypto;
+import org.jclouds.javax.annotation.Nullable;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -33,9 +27,15 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import org.jclouds.crypto.Crypto;
-import org.jclouds.javax.annotation.Nullable;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Signature;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 
 /**
  * 
@@ -93,10 +93,15 @@ public class JCECrypto implements Crypto {
       return provider == null ? Cipher.getInstance(algorithm) : Cipher.getInstance(algorithm, provider);
    }
 
-   public static final String MD5 = "MD5";
-   public static final String SHA1 = "SHA1";
-   public static final String SHA256 = "SHA-256";
-   public static final String SHA512 = "SHA-512";
+   @Override
+   public Signature signature(String algorithm) throws NoSuchAlgorithmException {
+       return Signature.getInstance(algorithm);
+   }
+
+   public final static String MD5 = "MD5";
+   public final static String SHA1 = "SHA1";
+   public final static String SHA256 = "SHA-256";
+   public final static String SHA512 = "SHA-512";
 
    @Override
    public MessageDigest md5() {
