@@ -33,26 +33,6 @@
     <name>jclouds OAuth core</name>
     <description>jclouds components to access OAuth</description>
 
-    <scm>
-        <connection>scm:git:git@github.com:jclouds/jclouds.git</connection>
-        <developerConnection>scm:git:git@github.com:jclouds/jclouds.git</developerConnection>
-        <url>http://github.com/jclouds/jclouds/tree/master/labs/oauth</url>
-    </scm>
-
-    <!-- bootstrapping: need to fetch the project POM -->
-    <repositories>
-        <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <properties>
         <jclouds.version>1.6.0-SNAPSHOT</jclouds.version>
         <test.oauth.identity>service_account</test.oauth.identity>
@@ -61,6 +41,7 @@
         <test.oauth.build-version></test.oauth.build-version>
         <test.oauth.endpoint>http://oauth.org</test.oauth.endpoint>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.jclouds</groupId>
