@@ -1,3 +1,22 @@
+/*
+ * Licensed to jclouds, Inc. (jclouds) under one or more
+ * contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  jclouds licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.jclouds.googlestorage;
 
 import com.google.common.collect.ImmutableSet;
@@ -18,11 +37,8 @@ import java.net.URI;
 import java.util.Properties;
 
 import static org.jclouds.Constants.PROPERTY_ISO3166_CODES;
-import static org.jclouds.oauth.v2.OAuthConstants.PKCS_CERITIFICATE_KEY_PASSWORD;
-import static org.jclouds.oauth.v2.OAuthConstants.PKCS_CERTIFICATE_KEY_NAME;
-import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_ALGORITHM;
+import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_OR_MAC_ALGORITHM;
 import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_ASSERTION_DESCRIPTION;
-import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_SCOPE;
 
 public class GoogleStorageApiMetadata extends BaseRestApiMetadata {
 
@@ -48,11 +64,8 @@ public class GoogleStorageApiMetadata extends BaseRestApiMetadata {
       Properties properties = S3ApiMetadata.defaultProperties();
       properties.setProperty(PROPERTY_ISO3166_CODES, "US");
       properties.put("oauth.endpoint", "https://accounts.google.com/o/oauth2/token");
-      properties.put(TOKEN_SCOPE, "https://www.googleapis.com/auth/devstorage.full_control");
       properties.put(TOKEN_ASSERTION_DESCRIPTION, "https://accounts.google.com/o/oauth2/token");
-      properties.put(PKCS_CERTIFICATE_KEY_NAME, "privatekey");
-      properties.put(PKCS_CERITIFICATE_KEY_PASSWORD, "notasecret");
-      properties.put(SIGNATURE_ALGORITHM, "RS256");
+      properties.put(SIGNATURE_OR_MAC_ALGORITHM, "RS256");
       return properties;
    }
 
