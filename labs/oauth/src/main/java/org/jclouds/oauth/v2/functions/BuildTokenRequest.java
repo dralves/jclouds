@@ -18,23 +18,30 @@
  */
 package org.jclouds.oauth.v2.functions;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.base.Supplier;
+import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.jclouds.domain.Credentials;
-import org.jclouds.oauth.v2.OAuthClient;
+import org.jclouds.oauth.v2.config.OAuthScopes;
 import org.jclouds.oauth.v2.domain.ClaimSet;
 import org.jclouds.oauth.v2.domain.Header;
+import org.jclouds.oauth.v2.domain.OAuthCredentials;
 import org.jclouds.oauth.v2.domain.TokenRequest;
 import org.jclouds.oauth.v2.domain.TokenRequestFormat;
+import org.jclouds.rest.internal.GeneratedHttpRequest;
 
 import javax.inject.Singleton;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.jclouds.oauth.v2.OAuthConstants.ADDITIONAL_CLAIMS;
-import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_ALGORITHM;
+import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_OR_MAC_ALGORITHM;
 import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_ASSERTION_DESCRIPTION;
-import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_SCOPE;
 
 /**
  * The default authenticator.
@@ -46,40 +53,45 @@ import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_SCOPE;
  * @author David Alves
  */
 @Singleton
-public class DefaultAuthenticator extends BaseAuthenticator {
+public class BuildTokenRequest implements Function<GeneratedHttpRequest, TokenRequest> {
 
-   private final String scope;
    private final String assertionTargetDescription;
    private final String signatureAlgorithm;
    private final TokenRequestFormat tokenRequestFormat;
+   private Supplier<OAuthCredentials> credentialsSupplier;
+
    @Inject(optional = true)
    @Named(ADDITIONAL_CLAIMS)
-   protected Map<String, String> additionalClaims;
+   protected Map<String, String> additionalClaims = ImmutableMap.of();
+
+   @VisibleForTesting
+   public Ticker ticker = Ticker.systemTicker();
 
    @Inject
-   public DefaultAuthenticator(OAuthClient oauthClient,
-                               @Named(TOKEN_SCOPE) String scope,
-                               @Named(TOKEN_ASSERTION_DESCRIPTION) String assertionTargetDescription,
-                               @Named(SIGNATURE_ALGORITHM) String signatureAlgorithm,
-                               TokenRequestFormat tokenRequestFormat) {
-      super(oauthClient);
-      this.scope = scope;
+   public BuildTokenRequest(@Named(TOKEN_ASSERTION_DESCRIPTION) String assertionTargetDescription,
+                            @Named(SIGNATURE_OR_MAC_ALGORITHM) String signatureAlgorithm,
+                            TokenRequestFormat tokenRequestFormat, Supplier<OAuthCredentials> credentialsSupplier) {
       this.assertionTargetDescription = assertionTargetDescription;
       this.signatureAlgorithm = signatureAlgorithm;
       this.tokenRequestFormat = tokenRequestFormat;
-      this.additionalClaims = additionalClaims == null ? ImmutableMap.<String, String>of() : additionalClaims;
+      this.credentialsSupplier = credentialsSupplier;
    }
 
-   protected TokenRequest buildTokenRequest(Credentials creds, long now) {
+   @Override
+   public TokenRequest apply(GeneratedHttpRequest request) {
+      long now = TimeUnit.SECONDS.convert(ticker.read(), TimeUnit.NANOSECONDS);
+
       // fetch the token
       Header header = new Header.Builder()
-              .signer(signatureAlgorithm)
+              .signerAlgorithm(signatureAlgorithm)
               .type(tokenRequestFormat.getTypeName())
               .build();
 
-      ClaimSet claimSet = new ClaimSet.Builder(this.tokenRequestFormat.requiredClaimSet())
-              .addClaim("iss", creds.identity)
-              .addClaim("scope", scope)
+      OAuthScopes scopes = getOAuthScopes(request);
+
+      ClaimSet claimSet = new ClaimSet.Builder(this.tokenRequestFormat.requiredClaims())
+              .addClaim("iss", credentialsSupplier.get().identity)
+              .addClaim("scope", Joiner.on(",").join(scopes.value()))
               .addClaim("aud", assertionTargetDescription)
               .emissionTime(now)
               .expirationTime(now + 3600)
@@ -92,4 +104,13 @@ public class DefaultAuthenticator extends BaseAuthenticator {
               .build();
    }
 
+   protected OAuthScopes getOAuthScopes(GeneratedHttpRequest request) {
+      OAuthScopes classScopes = request.getDeclaring().getAnnotation(OAuthScopes.class);
+      OAuthScopes methodScopes = request.getJavaMethod().getAnnotation(OAuthScopes.class);
+      checkState(classScopes != null || methodScopes != null, String.format("REST class or method must be annotated " +
+              "with OAuthScopes specifying required permissions. Class: %s, Method: %s",
+              request.getDeclaring().getName(),
+              request.getJavaMethod().getName()));
+      return methodScopes != null ? methodScopes : classScopes;
+   }
 }

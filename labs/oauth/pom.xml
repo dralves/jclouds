@@ -109,11 +109,11 @@
                                 </goals>
                                 <configuration>
                                     <systemPropertyVariables>
-                                        <test.oauth.identity>\$\{test.oauth.identity\}</test.oauth.identity>
-                                        <test.oauth.credential>\$\{test.oauth.credential\}</test.oauth.credential>
-                                        <test.oauth.endpoint>\$\{test.oauth.endpoint\}</test.oauth.endpoint>
-                                        <test.oauth.api-version>\$\{test.oauth.api-version\}</test.oauth.api-version>
-                                        <test.oauth.build-version>\$\{test.oauth.build-version\}
+                                        <test.oauth.identity>${test.oauth.identity}</test.oauth.identity>
+                                        <test.oauth.credential>${test.oauth.credential}</test.oauth.credential>
+                                        <test.oauth.endpoint>${test.oauth.endpoint}</test.oauth.endpoint>
+                                        <test.oauth.api-version>${test.oauth.api-version}</test.oauth.api-version>
+                                        <test.oauth.build-version>${test.oauth.build-version}
                                         </test.oauth.build-version>
                                     </systemPropertyVariables>
                                 </configuration>

@@ -18,15 +18,19 @@
  */
 package org.jclouds.oauth.v2.filters;
 
-import com.google.common.base.Supplier;
+import com.google.common.base.Function;
+import com.google.common.cache.LoadingCache;
 import org.jclouds.http.HttpException;
 import org.jclouds.http.HttpRequest;
 import org.jclouds.http.HttpRequestFilter;
-import org.jclouds.oauth.v2.config.Authentication;
 import org.jclouds.oauth.v2.domain.Token;
+import org.jclouds.oauth.v2.domain.TokenRequest;
+import org.jclouds.rest.internal.GeneratedHttpRequest;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * To be used by client applications to embed an OAuth authentication in their REST requests.
@@ -38,16 +42,26 @@ import javax.inject.Singleton;
 @Singleton
 public class OAuthAuthenticator implements HttpRequestFilter {
 
-   private Supplier<Token> tokeSupplier;
+   private Function<GeneratedHttpRequest, TokenRequest> tokenRequestBuilder;
+   private Function<TokenRequest, Token> tokenFetcher;
 
    @Inject
-   OAuthAuthenticator(@Authentication Supplier<Token> tokenSupplier) {
-      this.tokeSupplier = tokenSupplier;
+   OAuthAuthenticator(Function<GeneratedHttpRequest, TokenRequest> tokenRequestBuilder, LoadingCache<TokenRequest,
+           Token> tokenFetcher) {
+      this.tokenRequestBuilder = tokenRequestBuilder;
+      this.tokenFetcher = tokenFetcher;
    }
 
    @Override
    public HttpRequest filter(HttpRequest request) throws HttpException {
-      return request.toBuilder().addHeader("Authorization", String.format("Bearer %s",
-              tokeSupplier.get().getAccessToken())).build();
+      checkState(request instanceof GeneratedHttpRequest, "request must be an instance of GeneratedHttpRequest");
+      GeneratedHttpRequest generatedHttpRequest = (GeneratedHttpRequest) request;
+      TokenRequest tokenRequest = tokenRequestBuilder.apply(generatedHttpRequest);
+      Token token = tokenFetcher.apply(tokenRequest);
+      return request.toBuilder().addHeader("Authorization", String.format("%s %s",
+              token.getTokenType(), token.getAccessToken())).build();
+
    }
+
+
 }

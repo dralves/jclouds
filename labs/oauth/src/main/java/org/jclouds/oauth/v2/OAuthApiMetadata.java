@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Module;
 import org.jclouds.apis.ApiMetadata;
+import org.jclouds.oauth.v2.config.OAuthModule;
 import org.jclouds.oauth.v2.config.OAuthRestClientModule;
 import org.jclouds.rest.RestContext;
 import org.jclouds.rest.internal.BaseRestApiMetadata;
@@ -29,10 +30,7 @@ import org.jclouds.rest.internal.BaseRestApiMetadata;
 import java.net.URI;
 import java.util.Properties;
 
-import static org.jclouds.oauth.v2.OAuthConstants.PKCS_CERITIFICATE_KEY_PASSWORD;
-import static org.jclouds.oauth.v2.OAuthConstants.PKCS_CERTIFICATE_KEY_NAME;
-import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_ALGORITHM;
-import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_KEY_FORMAT;
+import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_OR_MAC_ALGORITHM;
 
 /**
  * Implementation of {@link ApiMetadata} for OAuth 2 API
@@ -41,8 +39,8 @@ import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_KEY_FORMAT;
  */
 public class OAuthApiMetadata extends BaseRestApiMetadata {
 
-   public static final TypeToken<RestContext<OAuthClient, OAuthAsyncClient>> CONTEXT_TOKEN = new
-           TypeToken<RestContext<OAuthClient, OAuthAsyncClient>>() {};
+   public static final TypeToken<RestContext<OAuthApi, OAuthAsyncApi>> CONTEXT_TOKEN = new
+           TypeToken<RestContext<OAuthApi, OAuthAsyncApi>>() {};
 
    @Override
    public Builder toBuilder() {
@@ -59,24 +57,22 @@ public class OAuthApiMetadata extends BaseRestApiMetadata {
 
    public static Properties defaultProperties() {
       Properties properties = BaseRestApiMetadata.defaultProperties();
-      properties.put(SIGNATURE_ALGORITHM, "RS256");
-      properties.put(SIGNATURE_KEY_FORMAT, "PKCS12");
-      properties.put(PKCS_CERTIFICATE_KEY_NAME, "privatekey");
-      properties.put(PKCS_CERITIFICATE_KEY_PASSWORD, "notasecret");
+      properties.put(SIGNATURE_OR_MAC_ALGORITHM, "RS256");
       return properties;
    }
 
    public static class Builder extends BaseRestApiMetadata.Builder {
 
       protected Builder() {
-         super(OAuthClient.class, OAuthAsyncClient.class);
+         super(OAuthApi.class, OAuthAsyncApi.class);
          id("oauth").name("OAuth API")
                  .identityName("service_account")
                  .credentialName("service_key")
                  .documentation(URI.create("TODO"))
                  .version("2")
                  .defaultProperties(OAuthApiMetadata.defaultProperties())
-                 .defaultModules(ImmutableSet.<Class<? extends Module>>of(OAuthRestClientModule.class));
+                 .defaultModules(ImmutableSet.<Class<? extends Module>>of(OAuthModule.class, OAuthRestClientModule
+                         .class));
       }
 
       @Override

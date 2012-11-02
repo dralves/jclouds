@@ -21,22 +21,22 @@ package org.jclouds.oauth.v2.internal;
 import com.google.common.reflect.TypeToken;
 import org.jclouds.apis.BaseContextLiveTest;
 import org.jclouds.oauth.v2.OAuthApiMetadata;
-import org.jclouds.oauth.v2.OAuthAsyncClient;
-import org.jclouds.oauth.v2.OAuthClient;
+import org.jclouds.oauth.v2.OAuthAsyncApi;
+import org.jclouds.oauth.v2.OAuthApi;
 import org.jclouds.rest.RestContext;
 
 
 /**
  * @author Adrian Cole
  */
-public class BaseOAuthApiLiveTest extends BaseContextLiveTest<RestContext<OAuthClient, OAuthAsyncClient>> {
+public class BaseOAuthApiLiveTest extends BaseContextLiveTest<RestContext<OAuthApi, OAuthAsyncApi>> {
 
    public BaseOAuthApiLiveTest() {
       provider = "oauth";
    }
    
    @Override
-   protected TypeToken<RestContext<OAuthClient, OAuthAsyncClient>> contextType() {
+   protected TypeToken<RestContext<OAuthApi, OAuthAsyncApi>> contextType() {
       return OAuthApiMetadata.CONTEXT_TOKEN;
    }
 

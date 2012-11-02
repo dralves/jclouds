@@ -22,8 +22,8 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import org.jclouds.oauth.v2.OAuthAsyncClient;
-import org.jclouds.oauth.v2.OAuthClient;
+import org.jclouds.oauth.v2.OAuthApi;
+import org.jclouds.oauth.v2.OAuthAsyncApi;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -40,10 +40,8 @@ public class OAuthAuthenticationModule extends AbstractModule {
 
    @Override
    protected void configure() {
-      install(new OAuthBaseModule());
-      // AuthenticationApi is used directly for filters and retry handlers, so let's bind it
-      // explicitly
-      bindClientAndAsyncClient(binder(), OAuthClient.class, OAuthAsyncClient.class);
+      install(new OAuthModule());
+      bindClientAndAsyncClient(binder(), OAuthApi.class, OAuthAsyncApi.class);
    }
 
    /**
@@ -55,6 +53,4 @@ public class OAuthAuthenticationModule extends AbstractModule {
    protected Supplier<URI> provideAuthenticationEndpoint(@Named("oauth.endpoint") String endpoint) {
       return Suppliers.ofInstance(URI.create(endpoint));
    }
-
-
 }

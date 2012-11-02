@@ -18,23 +18,36 @@
  */
 package org.jclouds.oauth.v2;
 
-import org.jclouds.concurrent.Timeout;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.jclouds.oauth.v2.config.Authentication;
 import org.jclouds.oauth.v2.domain.Token;
 import org.jclouds.oauth.v2.domain.TokenRequest;
+import org.jclouds.oauth.v2.handlers.OAuthTokenBinder;
 import org.jclouds.rest.AuthorizationException;
+import org.jclouds.rest.annotations.BinderParam;
+import org.jclouds.rest.annotations.Endpoint;
+import org.jclouds.rest.annotations.SkipEncoding;
 
-import java.util.concurrent.TimeUnit;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.core.MediaType;
 
 /**
- * Provides synchronous access to OAuth.
+ * Provides asynchronous access to OAuth via REST api.
  * <p/>
+ * Usually this is not directly used by a client, which instead specifies OAuthAuthenticator as a request filter,
+ * which in turn uses this class to perform token requests.
  *
  * @author David Alves
- * @see OAuthAsyncClient
+ * @see OAuthAsyncApi
  */
-@Timeout(duration = 60, timeUnit = TimeUnit.SECONDS)
-public interface OAuthClient {
+@SkipEncoding({'/', '='})
+@Endpoint(Authentication.class)
+public interface OAuthAsyncApi {
 
-   public Token authenticate(TokenRequest tokenRequest) throws AuthorizationException;
+   @POST
+   @Consumes(MediaType.APPLICATION_JSON)
+   public ListenableFuture<Token> authenticate(@BinderParam(OAuthTokenBinder.class) TokenRequest tokenRequest)
+           throws AuthorizationException;
 
 }

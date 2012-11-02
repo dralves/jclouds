@@ -85,6 +85,11 @@ public class JCECrypto implements Crypto {
    }
 
    @Override
+   public Mac hmac(String algorithm) throws NoSuchAlgorithmException {
+      return provider == null ? Mac.getInstance(algorithm) : Mac.getInstance(algorithm, provider);
+   }
+
+   @Override
    public MessageDigest digest(String algorithm) throws NoSuchAlgorithmException {
       return provider == null ? MessageDigest.getInstance(algorithm) : MessageDigest.getInstance(algorithm, provider);
    }
@@ -96,7 +101,7 @@ public class JCECrypto implements Crypto {
 
    @Override
    public Signature signature(String algorithm) throws NoSuchAlgorithmException {
-      return Signature.getInstance(algorithm);
+      return provider == null ? Signature.getInstance(algorithm) : Signature.getInstance(algorithm, provider);
    }
 
    public final static String MD5 = "MD5";
@@ -169,6 +174,11 @@ public class JCECrypto implements Crypto {
    @Override
    public KeyFactory rsaKeyFactory() {
       return rsaKeyFactory;
+   }
+
+   @Override
+   public KeyFactory keyFactory(String algorithm) throws NoSuchAlgorithmException {
+      return provider == null ? KeyFactory.getInstance(algorithm) : KeyFactory.getInstance(algorithm, provider);
    }
 
    @Override

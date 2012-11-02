@@ -19,17 +19,14 @@
 package org.jclouds.oauth.v2.functions;
 
 import org.apache.commons.codec.binary.Base64;
-import org.jclouds.ContextBuilder;
-import org.jclouds.crypto.Crypto;
-import org.jclouds.oauth.v2.OAuthTestUtils;
-import org.jclouds.oauth.v2.config.OAuthBaseModule;
+import org.jclouds.encryption.internal.JCECrypto;
 import org.testng.annotations.Test;
 
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.Signature;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 
 import static com.google.common.base.Suppliers.ofInstance;
 import static org.testng.Assert.assertEquals;
@@ -37,7 +34,7 @@ import static org.testng.Assert.assertNotNull;
 
 
 /**
- * Tests the SignerFunction along with the loading of the private key and signature.
+ * Tests the SignOrProduceMacForToken
  *
  * @author David Alves
  */
@@ -50,28 +47,20 @@ public class SignerFunctionTest {
            "ZWFwaXMuY29tL2F1dGgvcHJlZGljdGlvbiIsImF1ZCI6Imh0dHBzOi8vYWNjb3VudHMuZ29vZ2x" +
            "lLmNvbS9vL29hdXRoMi90b2tlbiIsImV4cCI6MTMyODU1NDM4NSwiaWF0IjoxMzI4NTUwNzg1fQ";
 
-   private static final String PAYLOAD_SIGNATURE_RESULT =
+   private static final String SHA256withRSA_PAYLOAD_SIGNATURE_RESULT =
            "bmQrCv4gjkLWDK1JNJni74_kPiSDUMF_FImgqKJMUIgkDX1m2Sg3bH1yjF-cjBN7CvfAscnageo" +
                    "GtL2TGbwoTjJgUO5Yy0esavUUF-mBQHQtSw-2nL-9TNyM4SNi6fHPbgr83GGKOgA86r" +
                    "I9-nj3oUGd1fQty2k4Lsd-Zdkz6es";
 
-   private Signature signature;
-   private PrivateKey pk;
 
-
-   public void testLoadRS256Signature() throws NoSuchAlgorithmException {
-      Crypto crypto = ContextBuilder.newBuilder("oauth").overrides(OAuthTestUtils.defaultProperties(null)).
-              buildInjector().getInstance(Crypto.class);
-      signature = new OAuthBaseModule().provideSignature("RS256", crypto).get();
-      assertNotNull(signature);
-   }
-
-   @Test(dependsOnMethods = {"testLoadRS256Signature"})
-   public void testSignPayload() throws InvalidKeyException, UnsupportedEncodingException {
-      SignerFunction signer = new SignerFunction(ofInstance(signature), ofInstance(OAuthCredentialsfromPKCS12FileTest
-              .loadOAuthCredentials()));
+   public void testSignPayload() throws InvalidKeyException, IOException, NoSuchAlgorithmException,
+           CertificateException, InvalidKeySpecException {
+      SignOrProduceMacForToken signer = new SignOrProduceMacForToken("RS256",
+              ofInstance(OAuthCredentialsFromPKTest
+                      .loadOAuthCredentials()), new JCECrypto());
+      signer.loadSignatureOrMacOrNone();
       byte[] payloadSignature = signer.apply(PAYLOAD.getBytes("UTF-8"));
       assertNotNull(payloadSignature);
-      assertEquals(Base64.encodeBase64URLSafeString(payloadSignature), PAYLOAD_SIGNATURE_RESULT);
+      assertEquals(Base64.encodeBase64URLSafeString(payloadSignature), SHA256withRSA_PAYLOAD_SIGNATURE_RESULT);
    }
 }

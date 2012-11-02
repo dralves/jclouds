@@ -18,41 +18,43 @@
  */
 package org.jclouds.oauth.v2.functions;
 
+import org.jclouds.encryption.internal.JCECrypto;
 import org.jclouds.oauth.v2.domain.OAuthCredentials;
+import org.jclouds.util.Strings2;
 import org.testng.annotations.Test;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 /**
  * Test loading the credentials by extracting a pk from a PKCS12 keystore.
- *
-
  */
-@Test(groups = "unit", testName = "OAuthCredentialsfromPKCS12FileTest")
-public class OAuthCredentialsfromPKCS12FileTest {
+@Test(groups = "unit", testName = "OAuthCredentialsFromPKTest")
+public class OAuthCredentialsFromPKTest {
 
-   public static OAuthCredentials loadOAuthCredentials() {
-      OAuthCredentialsFromPKCS12File loader = new OAuthCredentialsFromPKCS12File("foo",
-              "target/test-classes/test.p12", "privatekey",
-              "notasecret");
+   public static OAuthCredentials loadOAuthCredentials() throws IOException, NoSuchAlgorithmException,
+           CertificateException, InvalidKeySpecException {
+      OAuthCredentialsSupplier loader = new OAuthCredentialsSupplier("foo",
+              Strings2.toStringAndClose(new FileInputStream("src/test/resources/testpk.pem")), "RS256",
+              new JCECrypto());
+      loader.loadPrivateKey();
       return loader.get();
    }
 
 
-   public void testLoadPKCS12Certificate() throws IOException, NoSuchAlgorithmException, KeyStoreException,
-           CertificateException, UnrecoverableKeyException {
+   public void testLoadPKString() throws IOException, NoSuchAlgorithmException, KeyStoreException,
+           CertificateException, UnrecoverableKeyException, InvalidKeySpecException {
       OAuthCredentials creds = loadOAuthCredentials();
       assertNotNull(creds);
       assertEquals(creds.identity, "foo");
       assertNotNull(creds.privateKey);
    }
-
-
 }

@@ -46,6 +46,8 @@ public interface Crypto {
 
    KeyFactory rsaKeyFactory();
 
+   KeyFactory keyFactory(String algorithm) throws NoSuchAlgorithmException;
+
    CertificateFactory certFactory();
 
    Mac hmac(String algorithm, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException;
@@ -53,6 +55,8 @@ public interface Crypto {
    Mac hmacSHA256(byte[] key) throws InvalidKeyException;
 
    Mac hmacSHA1(byte[] key) throws InvalidKeyException;
+
+   Mac hmac(String algorithm) throws NoSuchAlgorithmException;
 
    MessageDigest digest(String algorithm) throws NoSuchAlgorithmException;
 

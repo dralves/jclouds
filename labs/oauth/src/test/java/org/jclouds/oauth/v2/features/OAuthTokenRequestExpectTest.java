@@ -20,7 +20,7 @@ package org.jclouds.oauth.v2.features;
 
 import org.jclouds.http.HttpRequest;
 import org.jclouds.http.HttpResponse;
-import org.jclouds.oauth.v2.OAuthClient;
+import org.jclouds.oauth.v2.OAuthApi;
 import org.jclouds.oauth.v2.OAuthTestUtils;
 import org.jclouds.oauth.v2.domain.ClaimSet;
 import org.jclouds.oauth.v2.domain.Header;
@@ -31,8 +31,10 @@ import org.testng.annotations.Test;
 
 import javax.ws.rs.core.MediaType;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Properties;
 
+import static org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString;
 import static org.testng.Assert.assertEquals;
 
 /**
@@ -43,7 +45,15 @@ import static org.testng.Assert.assertEquals;
 @Test(groups = "unit", testName = "OAuthTokenRequestExpectTest")
 public class OAuthTokenRequestExpectTest extends BaseOAuthApiExpectTest {
 
-   private static final Token TOKEN = new Token("1/8xbJqaOZXSUZbHLl5EOtu1pxz3fmmetKx9W8CV4t79M", "Bearer", 3600);
+   private static final String header = "{\"alg\":\"RS256\",\"typ\":\"JWT\"}";
+
+   private static final String claims = "{\"iss\":\"761326798069-r5mljlln1rd4lrbhg75efgigp36m78j5@developer" +
+           ".gserviceaccount.com\"," +
+           "\"scope\":\"https://www.googleapis.com/auth/prediction\",\"aud\":\"https://accounts.google" +
+           ".com/o/oauth2/token\",\"exp\":1328573381,\"iat\":1328569781}";
+
+   private static final Token TOKEN = new Token.Builder().accessToken
+           ("1/8xbJqaOZXSUZbHLl5EOtu1pxz3fmmetKx9W8CV4t79M").tokenType("Bearer").expiresIn(3600).build();
 
    private static final ClaimSet CLAIM_SET = new ClaimSet.Builder().addClaim("iss",
            "761326798069-r5mljlln1rd4lrbhg75efgigp36m78j5@developer" +
@@ -53,18 +63,14 @@ public class OAuthTokenRequestExpectTest extends BaseOAuthApiExpectTest {
            .expirationTime(1328573381)
            .emissionTime(1328569781).build();
 
-   private static final Header HEADER = new Header.Builder().signer("RS256").type("JWT").build();
+   private static final Header HEADER = new Header.Builder().signerAlgorithm("RS256").type("JWT").build();
 
    private static final String URL_ENCODED_TOKEN_REQUEST =
            "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&" +
                    // Base64 Encoded Header
-                   "assertion=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9." +
+                   "assertion=" + encodeBase64URLSafeString(header.getBytes(Charset.forName("UTF-8"))) + "." +
                    // Base64 Encoded Claims
-                   "eyJpc3MiOiI3NjEzMjY3OTgwNjktcjVtbGpsbG4xcmQ0bHJiaGc3NWVmZ2lncDM2bTc4a" +
-                   "jVAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzY29wZSI6Imh0dHBzOi8vd3" +
-                   "d3Lmdvb2dsZWFwaXMuY29tL2F1dGgvcHJlZGljdGlvbiIsImF1ZCI6Imh0dHBzOi8vYWN" +
-                   "jb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi90b2tlbiIsImV4cCI6MTMyODU3MzM4MSwia" +
-                   "WF0IjoxMzI4NTY5NzgxfQ." +
+                   encodeBase64URLSafeString(claims.getBytes(Charset.forName("UTF-8"))) + "." +
                    // Base64 encoded {header}.{claims} signature (using SHA256)
                    "W2Lesr_98AzVYiMbzxFqmwcOjpIWlwqkC6pNn1fXND9oSDNNnFhy-AAR6DKH-x9ZmxbY80" +
                    "R5fH-OCeWumXlVgceKN8Z2SmgQsu8ElTpypQA54j_5j8vUImJ5hsOUYPeyF1U2BUzZ3L5g" +
@@ -90,8 +96,8 @@ public class OAuthTokenRequestExpectTest extends BaseOAuthApiExpectTest {
    }
 
    public void testGenerateJWTRequest() {
-      OAuthClient client = requestSendsResponse(TOKEN_REQUEST, TOKEN_RESPONSE);
-      assertEquals(client.authenticate(new TokenRequest(HEADER, CLAIM_SET)), TOKEN);
+      OAuthApi api = requestSendsResponse(TOKEN_REQUEST, TOKEN_RESPONSE);
+      assertEquals(api.authenticate(new TokenRequest(HEADER, CLAIM_SET)), TOKEN);
    }
 
 }

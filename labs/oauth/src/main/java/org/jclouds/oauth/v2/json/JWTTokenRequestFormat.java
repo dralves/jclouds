@@ -105,7 +105,7 @@ public class JWTTokenRequestFormat implements TokenRequestFormat {
    }
 
    @Override
-   public Set<String> requiredClaimSet() {
+   public Set<String> requiredClaims() {
       // exp and ist (expiration and emission times) are assumed mandatory already
       return ImmutableSet.of("iss", "scope", "aud");
    }

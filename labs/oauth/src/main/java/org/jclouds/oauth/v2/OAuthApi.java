@@ -16,37 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.jclouds.oauth.v2.functions;
+package org.jclouds.oauth.v2;
 
-import com.google.common.base.Function;
-import org.jclouds.domain.Credentials;
-import org.jclouds.http.HttpException;
-import org.jclouds.oauth.v2.OAuthClient;
+import org.jclouds.concurrent.Timeout;
 import org.jclouds.oauth.v2.domain.Token;
 import org.jclouds.oauth.v2.domain.TokenRequest;
+import org.jclouds.rest.AuthorizationException;
+
+import java.util.concurrent.TimeUnit;
 
 /**
- * A base for authenticators. Actually makes the request, subclasses should be responsible for composing the token
- * request.
+ * Provides synchronous access to OAuth.
+ * <p/>
  *
- * @author David Alves´
+ * @author David Alves
+ * @see OAuthAsyncApi
  */
-public abstract class BaseAuthenticator implements Function<Credentials, Token> {
+@Timeout(duration = 60, timeUnit = TimeUnit.SECONDS)
+public interface OAuthApi {
 
-   protected OAuthClient oauthClient;
+   public Token authenticate(TokenRequest tokenRequest) throws AuthorizationException;
 
-   public BaseAuthenticator(OAuthClient oauthClient) {
-      this.oauthClient = oauthClient;
-   }
-
-   @Override
-   public Token apply(Credentials creds) throws HttpException {
-
-      // now measured in seconds
-      long now = System.currentTimeMillis() / 1000;
-      return oauthClient.authenticate(buildTokenRequest(creds, now));
-
-   }
-
-   protected abstract TokenRequest buildTokenRequest(Credentials creds, long now);
 }

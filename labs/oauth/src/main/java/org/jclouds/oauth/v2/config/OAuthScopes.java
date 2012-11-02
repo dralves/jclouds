@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to jclouds, Inc. (jclouds) under one or more
  * contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,8 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.jclouds.oauth.v2.config;
 
+package org.jclouds.oauth.v2.config;
 
 import javax.inject.Qualifier;
 import java.lang.annotation.ElementType;
@@ -26,22 +26,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Used to annotate REST methods that use OAuthAuthentication.
+ * Used to annotate REST methods/ifaces that use OAuthAuthentication.
  * <p/>
- * TODO: use this to have fine-grained specification of scopes, etc.
+ * Sets the scopes for the token request for that particular method.
  *
  * @author David Alves
  */
 @Retention(value = RetentionPolicy.RUNTIME)
-@Target(value = {ElementType.TYPE, ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD})
+@Target(value = {ElementType.TYPE, ElementType.METHOD})
 @Qualifier
-public @interface OAuthAuthentication {
+public @interface OAuthScopes {
 
-   String[] scopes();
+   String[] value();
 
-   String signatureAlgorithm() default "RS256";
-
-   String assertionDescription();
-
-   String[] additionalClaims();
 }

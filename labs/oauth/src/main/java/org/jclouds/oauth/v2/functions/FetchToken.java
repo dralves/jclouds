@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to jclouds, Inc. (jclouds) under one or more
  * contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,44 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.jclouds.oauth.v2.functions;
 
 import com.google.common.base.Function;
-import com.google.common.base.Supplier;
-import com.google.common.base.Throwables;
-import com.google.inject.Singleton;
-import org.jclouds.oauth.v2.domain.OAuthCredentials;
+import org.jclouds.oauth.v2.OAuthApi;
+import org.jclouds.oauth.v2.domain.Token;
+import org.jclouds.oauth.v2.domain.TokenRequest;
 
 import javax.inject.Inject;
-import java.security.InvalidKeyException;
-import java.security.PrivateKey;
-import java.security.Signature;
-import java.security.SignatureException;
+import javax.inject.Singleton;
 
 /**
- * Function that signs OAuth tokens, provided a {@link Signature} algorithm and {@link PrivateKey}
- *
  * @author David Alves
  */
 @Singleton
-public class SignerFunction implements Function<byte[], byte[]> {
+public class FetchToken implements Function<TokenRequest, Token> {
 
-   private final Signature signature;
+   private OAuthApi oAuthApi;
 
    @Inject
-   public SignerFunction(Supplier<Signature> signature, Supplier<OAuthCredentials> credentials) throws
-           InvalidKeyException {
-      this.signature = signature.get();
-      this.signature.initSign(credentials.get().privateKey);
+   public FetchToken(OAuthApi oAuthApi) {
+      this.oAuthApi = oAuthApi;
    }
 
    @Override
-   public byte[] apply(byte[] input) {
-      try {
-         this.signature.update(input);
-         return this.signature.sign();
-      } catch (SignatureException e) {
-         throw Throwables.propagate(e);
-      }
+   public Token apply(TokenRequest input) {
+      return this.oAuthApi.authenticate(input);
    }
 }

@@ -18,15 +18,19 @@
  */
 package org.jclouds.oauth.v2.domain;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.util.Map;
 import java.util.Set;
 
+import static com.google.common.base.Objects.ToStringHelper;
+import static com.google.common.base.Objects.equal;
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -34,8 +38,94 @@ import static com.google.common.base.Preconditions.checkState;
  * The claimset for the token.
  *
  * @author David Alves
+ * @see <a
+ *      href="https://developers.google.com/accounts/docs/OAuth2ServiceAccount"
+ *      >doc</a>
  */
-public class ClaimSet {
+public class ClaimSet extends ForwardingMap<String, String> {
+
+   public static Builder builder() {
+      return new Builder();
+   }
+
+   public Builder toBuilder() {
+      return builder().fromClaimSet(this);
+   }
+
+   public static class Builder {
+
+      private Set<String> requiredClaims;
+      private ImmutableMap.Builder<String, String> claims = new ImmutableMap.Builder<String, String>();
+      private long emissionTime;
+      private long expirationTime;
+
+      public Builder() {
+         this(ImmutableSet.<String>of());
+      }
+
+      /**
+       * Constructor that allows to predefine a mandatory set of claims as a comma-separated string, e.g, "iss,iat".
+       */
+      public Builder(String commaSeparatedRequiredClaims) {
+         this(ImmutableSet.copyOf(Splitter.on(",").split(checkNotNull(commaSeparatedRequiredClaims))));
+      }
+
+      /**
+       * Constructor that allows to predefine a mandatory set of claims as a set of strings.
+       */
+      public Builder(Set<String> requiredClaims) {
+         this.requiredClaims = ImmutableSet.copyOf(checkNotNull(requiredClaims));
+      }
+
+      /**
+       * Adds a Claim, i.e. key/value pair, e.g., "scope":"all_permissions".
+       */
+      public Builder addClaim(String name, String value) {
+         claims.put(checkNotNull(name), checkNotNull(value, "value of %s", name));
+         return this;
+      }
+
+      /**
+       * @see ClaimSet#getEmissionTime()
+       */
+      public Builder emissionTime(long emmissionTime) {
+         this.emissionTime = emmissionTime;
+         return this;
+      }
+
+      /**
+       * @see ClaimSet#getExpirationTime()
+       */
+      public Builder expirationTime(long expirationTime) {
+         this.expirationTime = expirationTime;
+         return this;
+      }
+
+      /**
+       * Adds a map containing multiple claims
+       */
+      public Builder addAllClaims(Map<String, String> claims) {
+         this.claims.putAll(checkNotNull(claims));
+         return this;
+      }
+
+      public ClaimSet build() {
+         Map<String, String> claimsMap = claims.build();
+         checkState(Sets.intersection(claimsMap.keySet(), requiredClaims).size() == requiredClaims.size(),
+                 "not all required claims were present");
+         if (emissionTime == 0) {
+            emissionTime = System.currentTimeMillis() / 1000;
+         }
+         if (expirationTime == 0) {
+            expirationTime = emissionTime + 3600;
+         }
+         return new ClaimSet(claimsMap, emissionTime, expirationTime);
+      }
+
+      public Builder fromClaimSet(ClaimSet claimSet) {
+         return new Builder().addAllClaims(claimSet.claims).expirationTime(expirationTime).emissionTime(emissionTime);
+      }
+   }
 
    private final Map<String, String> claims;
    private final long emissionTime;
@@ -47,89 +137,62 @@ public class ClaimSet {
       this.expirationTime = expirationTime;
    }
 
-   public Map<String, String> getClaims() {
-      return claims;
-   }
-
+   /**
+    * The emission time, in seconds since the epoch.
+    */
    public long getEmissionTime() {
       return emissionTime;
    }
 
+   /**
+    * The expiration time, in seconds since the emission time.
+    */
    public long getExpirationTime() {
       return expirationTime;
    }
 
-   public static class Builder {
-
-      private Set<String> requiredClaims;
-      private Map<String, String> claims = Maps.newLinkedHashMap();
-      private long emissionTime;
-      private long expirationTime;
-
-      public Builder() {
-         this(ImmutableSet.<String>of());
-      }
-
-      public Builder(String commaSeparatedRequiredClaims) {
-         this(ImmutableSet.copyOf(Splitter.on(",").split(commaSeparatedRequiredClaims)));
-      }
-
-      public Builder(Set<String> requiredClaims) {
-         this.requiredClaims = requiredClaims;
-      }
-
-      public Builder addClaim(String name, String value) {
-         claims.put(checkNotNull(name), checkNotNull(value));
-         return this;
-      }
-
-      public Builder emissionTime(long emmissionTime) {
-         this.emissionTime = emmissionTime;
-         return this;
-      }
-
-      public Builder expirationTime(long expirationTime) {
-         this.expirationTime = expirationTime;
-         return this;
-      }
-
-      public Builder addAllClaims(Map<String, String> claims) {
-         this.claims.putAll(claims);
-         return this;
-      }
-
-      public ClaimSet build() {
-         checkState(Sets.intersection(claims.keySet(), requiredClaims).size() == requiredClaims.size(),
-                 "not all required claims were present");
-         if (emissionTime == 0) {
-            emissionTime = System.currentTimeMillis() / 1000;
-         }
-         if (expirationTime == 0) {
-            expirationTime = emissionTime + 3600;
-         }
-         return new ClaimSet(ImmutableMap.copyOf(claims), emissionTime, expirationTime);
-      }
-   }
-
+   /**
+    * @returns the claims.
+    */
    @Override
-   public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      ClaimSet claimSet = (ClaimSet) o;
-
-      if (emissionTime != claimSet.emissionTime) return false;
-      if (expirationTime != claimSet.expirationTime) return false;
-      if (!claims.equals(claimSet.claims)) return false;
-
-      return true;
+   protected Map<String, String> delegate() {
+      return claims;
    }
 
+   /**
+    * {@inheritDoc}
+    */
    @Override
    public int hashCode() {
-      int result = claims.hashCode();
-      result = 31 * result + (int) (emissionTime ^ (emissionTime >>> 32));
-      result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
-      return result;
+      return Objects.hashCode(claims, emissionTime, expirationTime);
+   }
+
+   /**
+    * {@inheritDoc}
+    */
+   @Override
+   public boolean equals(Object obj) {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      ClaimSet other = (ClaimSet) obj;
+      return equal(claims, other.claims) && equal(this.emissionTime,
+              other.emissionTime) && equal(this.expirationTime, other.expirationTime);
+   }
+
+   /**
+    * {@inheritDoc}
+    */
+   @Override
+   public String toString() {
+      return string().toString();
+   }
+
+   protected ToStringHelper string() {
+      return toStringHelper(this).omitNullValues().add("claims", claims)
+              .add("emissionTime", emissionTime).add("expirationTIme", expirationTime);
    }
 }

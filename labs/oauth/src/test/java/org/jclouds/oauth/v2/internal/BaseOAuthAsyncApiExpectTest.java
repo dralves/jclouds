@@ -22,15 +22,15 @@ import com.google.common.base.Function;
 import com.google.inject.Module;
 import org.jclouds.http.HttpRequest;
 import org.jclouds.http.HttpResponse;
-import org.jclouds.oauth.v2.OAuthAsyncClient;
+import org.jclouds.oauth.v2.OAuthAsyncApi;
 
 import java.util.Properties;
 
 /**
  * @author Adrian Cole
  */
-public class BaseOAuthAsyncApiExpectTest extends BaseOAuthExpectTest<OAuthAsyncClient> {
-   public OAuthAsyncClient createClient(Function<HttpRequest, HttpResponse> fn, Module module, Properties props) {
-      return createInjector(fn, module, props).getInstance(OAuthAsyncClient.class);
+public class BaseOAuthAsyncApiExpectTest extends BaseOAuthExpectTest<OAuthAsyncApi> {
+   public OAuthAsyncApi createClient(Function<HttpRequest, HttpResponse> fn, Module module, Properties props) {
+      return createInjector(fn, module, props).getInstance(OAuthAsyncApi.class);
    }
 }

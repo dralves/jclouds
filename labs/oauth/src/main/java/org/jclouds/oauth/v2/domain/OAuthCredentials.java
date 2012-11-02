@@ -18,17 +18,72 @@
  */
 package org.jclouds.oauth.v2.domain;
 
+import com.google.common.base.Objects;
 import org.jclouds.domain.Credentials;
 
 import java.security.PrivateKey;
 
+import static com.google.common.base.Objects.equal;
+import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
- * Special kind credentials for oauth authentication.
- * <p/>
- * OAuth authentication requires a {@link java.security.PrivateKey} to sign requests.
+ * Special kind credentials for oauth authentication that includes {@link java.security.PrivateKey} to sign
+ * requests.
  */
 public class OAuthCredentials extends Credentials {
 
+   public static Builder builder() {
+      return new Builder();
+   }
+
+   public Builder toBuilder() {
+      return builder().fromOauthCredentials(this);
+   }
+
+   public static class Builder extends Credentials.Builder<OAuthCredentials> {
+
+      protected PrivateKey privateKey;
+
+      /**
+       * @see OAuthCredentials#privateKey
+       */
+      public Builder privateKey(PrivateKey privateKey) {
+         this.privateKey = checkNotNull(privateKey);
+         return this;
+      }
+
+      /**
+       * @see Credentials#identity
+       */
+      public Builder identity(String identity) {
+         this.identity = checkNotNull(identity);
+         return this;
+      }
+
+      /**
+       * @see Credentials#credential
+       */
+      public Builder credential(String credential) {
+         this.credential = credential;
+         return this;
+      }
+
+      @SuppressWarnings("unchecked")
+      public OAuthCredentials build() {
+         return new OAuthCredentials(checkNotNull(identity), credential, privateKey);
+      }
+
+      public Builder fromOauthCredentials(OAuthCredentials credentials) {
+         return new Builder().privateKey(credentials.privateKey).identity(credentials.identity)
+                 .credential(credentials.credential);
+      }
+   }
+
+   /**
+    * The private key associated with Credentials#identity.
+    * Used to sign token requests.
+    */
    public final PrivateKey privateKey;
 
    public OAuthCredentials(String identity, String credential, PrivateKey privateKey) {
@@ -36,48 +91,42 @@ public class OAuthCredentials extends Credentials {
       this.privateKey = privateKey;
    }
 
-   public static class Builder<T extends OAuthCredentials> extends Credentials.Builder<T> {
-
-      protected PrivateKey privateKey;
-
-      public Builder<T> privateKey(PrivateKey privateKey) {
-         this.privateKey = privateKey;
-         return this;
-      }
-
-      public Builder<T> identity(String identity) {
-         this.identity = identity;
-         return this;
-      }
-
-      public Builder<T> credential(String credential) {
-         this.credential = credential;
-         return this;
-      }
-
-      @SuppressWarnings("unchecked")
-      public T build() {
-         return (T) new OAuthCredentials(identity, credential, privateKey);
-      }
-   }
-
+   /**
+    * {@inheritDoc}
+    */
    @Override
-   public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      if (!super.equals(o)) return false;
-
-      OAuthCredentials that = (OAuthCredentials) o;
-
-      if (privateKey != null ? !privateKey.equals(that.privateKey) : that.privateKey != null) return false;
-
-      return true;
+   public boolean equals(Object obj) {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      OAuthCredentials other = (OAuthCredentials) obj;
+      return equal(this.identity, other.identity) && equal(this.credential,
+              other.credential) && equal(this.privateKey,
+              other.privateKey);
    }
 
+   /**
+    * {@inheritDoc}
+    */
    @Override
    public int hashCode() {
-      int result = super.hashCode();
-      result = 31 * result + (privateKey != null ? privateKey.hashCode() : 0);
-      return result;
+      return Objects.hashCode(identity, credential, privateKey);
+   }
+
+   /**
+    * {@inheritDoc}
+    */
+   @Override
+   public String toString() {
+      return string().toString();
+   }
+
+   protected Objects.ToStringHelper string() {
+      return toStringHelper(this).omitNullValues().add("identity", identity)
+              .add("credential", credential != null ? credential.hashCode() : null).add("privateKey",
+                      privateKey.hashCode());
    }
 }

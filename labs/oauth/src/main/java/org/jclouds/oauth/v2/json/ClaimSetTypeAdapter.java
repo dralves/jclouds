@@ -37,7 +37,7 @@ public class ClaimSetTypeAdapter extends TypeAdapter<ClaimSet> {
    @Override
    public void write(JsonWriter out, ClaimSet value) throws IOException {
       out.beginObject();
-      for (Map.Entry<String, String> entry : value.getClaims().entrySet()) {
+      for (Map.Entry<String, String> entry : value.entrySet()) {
          out.name(entry.getKey());
          out.value(entry.getValue());
       }

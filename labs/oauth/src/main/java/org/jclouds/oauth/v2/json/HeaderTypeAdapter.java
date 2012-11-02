@@ -45,7 +45,7 @@ public class HeaderTypeAdapter extends TypeAdapter<Header> {
       Header.Builder builder = new Header.Builder();
       in.beginObject();
       in.nextName();
-      builder.signer(in.nextString());
+      builder.signerAlgorithm(in.nextString());
       in.nextName();
       builder.type(in.nextString());
       in.endObject();

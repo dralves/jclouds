@@ -18,11 +18,11 @@
  */
 package org.jclouds.oauth.v2.internal;
 
-import org.jclouds.oauth.v2.OAuthClient;
+import org.jclouds.oauth.v2.OAuthApi;
 
 /**
  * @author Adrian Cole
  */
-public class BaseOAuthApiExpectTest extends BaseOAuthExpectTest<OAuthClient> {
+public class BaseOAuthApiExpectTest extends BaseOAuthExpectTest<OAuthApi> {
 
 }

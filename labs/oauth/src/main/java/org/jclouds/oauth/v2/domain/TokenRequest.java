@@ -18,75 +18,118 @@
  */
 package org.jclouds.oauth.v2.domain;
 
+import com.google.common.base.Objects;
+
+import static com.google.common.base.Objects.equal;
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * The complete token request.
+ * A complete token request.
  *
  * @author David Alves
  */
 public class TokenRequest {
 
-   private final Header header;
-   private final ClaimSet claimSet;
-
-   public TokenRequest(Header header, ClaimSet claimSet) {
-      this.header = header;
-      this.claimSet = claimSet;
+   public static Builder builder() {
+      return new Builder();
    }
 
-   public Header getHeader() {
-      return header;
-   }
-
-   public ClaimSet getClaimSet() {
-      return claimSet;
-   }
-
-   @Override
-   public String toString() {
-      return "TokenRequest{" +
-              "header=" + header +
-              ", claimSet=" + claimSet +
-              '}';
+   public Builder toBuilder() {
+      return builder().fromTokenRequest(this);
    }
 
    public static class Builder {
       private Header header;
       private ClaimSet claimSet;
 
+      /**
+       * @see TokenRequest#getClaimSet()
+       */
       public Builder header(Header header) {
          this.header = header;
          return this;
       }
 
+      /**
+       * @see TokenRequest#getHeader()
+       */
       public Builder claimSet(ClaimSet claimSet) {
          this.claimSet = claimSet;
          return this;
       }
 
       public TokenRequest build() {
-         return new TokenRequest(checkNotNull(header), checkNotNull(claimSet));
+         return new TokenRequest(header, claimSet);
+      }
+
+      public Builder fromTokenRequest(TokenRequest tokeRequest) {
+         return new Builder().header(tokeRequest.header).claimSet(tokeRequest.claimSet);
       }
    }
 
-   @Override
-   public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+   private final Header header;
+   private final ClaimSet claimSet;
 
-      TokenRequest that = (TokenRequest) o;
-
-      if (!claimSet.equals(that.claimSet)) return false;
-      if (!header.equals(that.header)) return false;
-
-      return true;
+   public TokenRequest(Header header, ClaimSet claimSet) {
+      this.header = checkNotNull(header);
+      this.claimSet = checkNotNull(claimSet);
    }
 
+   /**
+    * The header of this token request.
+    *
+    * @see Header
+    */
+   public Header getHeader() {
+      return header;
+   }
+
+   /**
+    * The claim set of this token request.
+    *
+    * @see ClaimSet
+    */
+   public ClaimSet getClaimSet() {
+      return claimSet;
+   }
+
+   /**
+    * {@inheritDoc}
+    */
+   @Override
+   public boolean equals(Object obj) {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      TokenRequest other = (TokenRequest) obj;
+      return equal(this.header, other.header) && equal(this.claimSet,
+              other.claimSet);
+   }
+
+   /**
+    * {@inheritDoc}
+    */
    @Override
    public int hashCode() {
-      int result = header.hashCode();
-      result = 31 * result + claimSet.hashCode();
-      return result;
+      return Objects.hashCode(header, claimSet);
    }
+
+   /**
+    * {@inheritDoc}
+    */
+   @Override
+   public String toString() {
+      return string().toString();
+   }
+
+   protected Objects.ToStringHelper string() {
+      return toStringHelper(this).omitNullValues().add("header", header)
+              .add("claimSet", claimSet);
+   }
+
+
 }

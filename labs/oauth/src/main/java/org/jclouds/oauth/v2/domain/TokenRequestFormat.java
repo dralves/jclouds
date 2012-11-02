@@ -25,16 +25,25 @@ import org.jclouds.oauth.v2.json.JWTTokenRequestFormat;
 import java.util.Set;
 
 /**
- * Formats a TokenRequest for a specific format (e.g. JWT token)
+ * Transforms a TokenRequest into a specific format (e.g. JWT token)
  *
  * @author David Alves
  */
 @ImplementedBy(JWTTokenRequestFormat.class)
 public interface TokenRequestFormat {
 
+   /**
+    * Transforms the provided HttpRequest into a particular token request with a specific format.
+    */
    public <R extends HttpRequest> R formatRequest(R httpRequest, TokenRequest tokenRequest);
 
+   /**
+    * The name of the type of the token request, e.g., "JWT"
+    */
    public String getTypeName();
 
-   public Set<String> requiredClaimSet();
+   /**
+    * The claims that must be present in the token request for it to be valid.
+    */
+   public Set<String> requiredClaims();
 }

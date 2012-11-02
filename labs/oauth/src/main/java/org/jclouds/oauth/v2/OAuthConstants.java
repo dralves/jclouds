@@ -18,6 +18,10 @@
  */
 package org.jclouds.oauth.v2;
 
+import com.google.common.collect.ImmutableMap;
+
+import java.util.Map;
+
 /**
  * The constants for OAuth \
  *
@@ -27,29 +31,15 @@ public class OAuthConstants {
 
    /**
     * The selected signature algorithm to use to sign the requests.
+    * <p/>
+    * This refers to the name the oauth provider expects, i.e., "RSA
     */
-   public static final String SIGNATURE_ALGORITHM = "jclouds.oauth.signature-algorithm";
+   public static final String SIGNATURE_OR_MAC_ALGORITHM = "jclouds.oauth.signature-or-mac-algorithm";
 
    /**
-    * The format of the certificate key file that will be used to sign the token request.
-    * Supported formats are PKCS12 and PKCS8, default is PKCS12
+    * Selected algorithm when a signature or mac isn't required.
     */
-   public static final String SIGNATURE_KEY_FORMAT = "jclouds.oauth.signature-key-format";
-
-   /**
-    * The name of the key (if the ceritificate is in a PKCS12 Keystore)
-    */
-   public static final String PKCS_CERTIFICATE_KEY_NAME = "jclouds.oauth.pkcs12.key-name";
-
-   /**
-    * The the password for the key (if the ceritificate is in a PKCS12 Keystore)
-    */
-   public static final String PKCS_CERITIFICATE_KEY_PASSWORD = "jclouds.oauth.pkcs12.key-password";
-
-   /**
-    * The permissions being requested.
-    */
-   public static final String TOKEN_SCOPE = "jclouds.oauth.scope";
+   public static final String NO_ALGORITHM = "none";
 
    /**
     * The assertion target
@@ -61,5 +51,40 @@ public class OAuthConstants {
     */
    public static final String ADDITIONAL_CLAIMS = "jclouds.oauth.additional-claims";
 
+   /**
+    * Static mapping between the oauth algorithm name and the Crypto provider signature algorithm name.
+    *
+    * @see <a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-06#section-3.1">doc</a>
+    */
+   public static final Map<String, String> OAUTH_ALGORITHM_NAMES_TO_SIGNATURE_ALGORITHM_NAMES = ImmutableMap
+           .<String, String>builder()
+           .put("RS256", "SHA256withRSA")
+           .put("RS384", "SHA384withRSA")
+           .put("RS512", "SHA512withRSA")
+           .put("HS256", "HmacSHA256")
+           .put("HS384", "HmacSHA384")
+           .put("HS512", "HmacSHA512")
+           .put("ES256", "SHA256withECDSA")
+           .put("ES384", "SHA384withECDSA")
+           .put("ES512", "SHA512withECDSA")
+           .put(NO_ALGORITHM, NO_ALGORITHM).build();
+
+   /**
+    * Static mapping between the oauth algorithm name and the Crypto provider KeyFactory algorithm name.
+    *
+    * @see <a href="http://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-06#section-3.1">doc</a>
+    */
+   public static final Map<String, String> OAUTH_ALGORITHM_NAMES_TO_KEYFACTORY_ALGORITHM_NAMES = ImmutableMap
+           .<String, String>builder()
+           .put("RS256", "RSA")
+           .put("RS384", "RSA")
+           .put("RS512", "RSA")
+           .put("HS256", "DiffieHellman")
+           .put("HS384", "DiffieHellman")
+           .put("HS512", "DiffieHellman")
+           .put("ES256", "EC")
+           .put("ES384", "EC")
+           .put("ES512", "EC")
+           .put(NO_ALGORITHM, NO_ALGORITHM).build();
 
 }

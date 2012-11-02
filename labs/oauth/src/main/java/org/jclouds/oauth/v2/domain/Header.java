@@ -18,29 +18,26 @@
  */
 package org.jclouds.oauth.v2.domain;
 
+import com.google.common.base.Objects;
+
+import static com.google.common.base.Objects.equal;
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * The header for the OAuth token, contains the signer algorithm's name and the type of the token
  *
  * @author David Alves
+ * @see <a href="https://developers.google.com/accounts/docs/OAuth2ServiceAccount">doc</a>
  */
 public class Header {
 
-   private final String signerAlgorithm;
-   private final String type;
-
-   Header(String signerAlgorithm, String type) {
-      this.signerAlgorithm = signerAlgorithm;
-      this.type = type;
+   public static Builder builder() {
+      return new Builder();
    }
 
-   public String getSignerAlgorithm() {
-      return signerAlgorithm;
-   }
-
-   public String getType() {
-      return type;
+   public Builder toBuilder() {
+      return builder().fromHeader(this);
    }
 
    public static class Builder {
@@ -48,38 +45,87 @@ public class Header {
       private String signerAlgorithm;
       private String type;
 
-      public Builder signer(String signerAlgorithm) {
+      /**
+       * @see Header#getSignerAlgorithm()
+       */
+      public Builder signerAlgorithm(String signerAlgorithm) {
          this.signerAlgorithm = checkNotNull(signerAlgorithm);
          return this;
       }
 
+      /**
+       * @see Header#getType()
+       */
       public Builder type(String type) {
          this.type = checkNotNull(type);
          return this;
       }
 
       public Header build() {
-         return new Header(checkNotNull(signerAlgorithm), checkNotNull(type));
+         return new Header(signerAlgorithm, type);
+      }
+
+      public Builder fromHeader(Header header) {
+         return new Builder().signerAlgorithm(header.signerAlgorithm).type(header.type);
       }
    }
 
-   @Override
-   public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+   private final String signerAlgorithm;
+   private final String type;
 
-      Header header = (Header) o;
-
-      if (!signerAlgorithm.equals(header.signerAlgorithm)) return false;
-      if (!type.equals(header.type)) return false;
-
-      return true;
+   protected Header(String signerAlgorithm, String type) {
+      this.signerAlgorithm = checkNotNull(signerAlgorithm);
+      this.type = checkNotNull(type);
    }
 
+   /**
+    * The name of the algorithm used to compute the signature, e.g., "RS256"
+    */
+   public String getSignerAlgorithm() {
+      return signerAlgorithm;
+   }
+
+   /**
+    * The type of the token, e.g., "JWT"
+    */
+   public String getType() {
+      return type;
+   }
+
+   /**
+    * {@inheritDoc}
+    */
+   @Override
+   public boolean equals(Object obj) {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      Header other = (Header) obj;
+      return equal(this.signerAlgorithm, other.signerAlgorithm) && equal(this.type,
+              other.type);
+   }
+
+   /**
+    * {@inheritDoc}
+    */
    @Override
    public int hashCode() {
-      int result = signerAlgorithm.hashCode();
-      result = 31 * result + type.hashCode();
-      return result;
+      return Objects.hashCode(signerAlgorithm, type);
+   }
+
+   /**
+    * {@inheritDoc}
+    */
+   @Override
+   public String toString() {
+      return string().toString();
+   }
+
+   protected Objects.ToStringHelper string() {
+      return toStringHelper(this).omitNullValues().add("signerAlgorithm", signerAlgorithm)
+              .add("type", type);
    }
 }
