@@ -37,19 +37,19 @@ import java.net.URI;
 import java.util.Properties;
 
 import static org.jclouds.Constants.PROPERTY_ISO3166_CODES;
+import static org.jclouds.oauth.v2.OAuthConstants.AUDIENCE;
+import static org.jclouds.oauth.v2.OAuthConstants.SCOPES;
 import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_OR_MAC_ALGORITHM;
-import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_ASSERTION_DESCRIPTION;
 
 public class GoogleStorageApiMetadata extends BaseRestApiMetadata {
 
 
-   public static final TypeToken<RestContext<? extends S3Client, ? extends GoogleStorageAsyncClient>> CONTEXT_TOKEN =
-           new TypeToken<RestContext<? extends S3Client, ? extends GoogleStorageAsyncClient>>() {
-           };
+   public static final TypeToken<RestContext<S3Client, GoogleStorageAsyncClient>> CONTEXT_TOKEN =
+           new TypeToken<RestContext<S3Client, GoogleStorageAsyncClient>>() {};
 
    @Override
    public Builder toBuilder() {
-      return (Builder) new Builder(getApi(), getAsyncApi()).fromApiMetadata(this);
+      return new Builder(getApi(), getAsyncApi()).fromApiMetadata(this);
    }
 
    public GoogleStorageApiMetadata() {
@@ -64,8 +64,9 @@ public class GoogleStorageApiMetadata extends BaseRestApiMetadata {
       Properties properties = S3ApiMetadata.defaultProperties();
       properties.setProperty(PROPERTY_ISO3166_CODES, "US");
       properties.put("oauth.endpoint", "https://accounts.google.com/o/oauth2/token");
-      properties.put(TOKEN_ASSERTION_DESCRIPTION, "https://accounts.google.com/o/oauth2/token");
+      properties.put(AUDIENCE, "https://accounts.google.com/o/oauth2/token");
       properties.put(SIGNATURE_OR_MAC_ALGORITHM, "RS256");
+      properties.put(SCOPES, "https://www.googleapis.com/auth/devstorage.full_control");
       return properties;
    }
 

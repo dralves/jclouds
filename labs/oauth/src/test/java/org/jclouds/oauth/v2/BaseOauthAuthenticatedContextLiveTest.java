@@ -28,10 +28,6 @@ import org.testng.annotations.Test;
 
 import java.util.Properties;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.jclouds.oauth.v2.OAuthConstants.AUDIENCE;
-import static org.jclouds.oauth.v2.OAuthConstants.SCOPES;
-import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_OR_MAC_ALGORITHM;
 import static org.jclouds.oauth.v2.OAuthTestUtils.setCredentialFromPemFile;
 
 /**
@@ -60,14 +56,9 @@ public abstract class BaseOauthAuthenticatedContextLiveTest<Api, AsyncApi> exten
    @Override
    protected Properties setupProperties() {
       Properties props = super.setupProperties();
-      setCredentialFromPemFile(props, "oauth.credential");
-      checkNotNull(setIfTestSystemPropertyPresent(props, "oauth.endpoint"), "test.oauth.endpoint must be set");
-      checkNotNull(setIfTestSystemPropertyPresent(props, AUDIENCE), "test.oauth.audience must be set");
-      setIfTestSystemPropertyPresent(props, SCOPES);
-      setIfTestSystemPropertyPresent(props, SIGNATURE_OR_MAC_ALGORITHM);
+      setCredentialFromPemFile(props, provider + ".credential");
       return props;
    }
-
 
    /**
     * Subclasses must override and call one of the REST api methods.
