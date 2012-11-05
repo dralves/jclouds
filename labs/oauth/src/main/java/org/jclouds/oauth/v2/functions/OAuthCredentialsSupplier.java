@@ -19,7 +19,6 @@
 package org.jclouds.oauth.v2.functions;
 
 import com.google.common.base.Supplier;
-import org.jclouds.crypto.Crypto;
 import org.jclouds.crypto.Pems;
 import org.jclouds.io.Payloads;
 import org.jclouds.oauth.v2.domain.OAuthCredentials;
@@ -56,21 +55,18 @@ public class OAuthCredentialsSupplier implements Supplier<OAuthCredentials> {
 
    private final String identity;
    private final String privateKeyInPemFormat;
-   private final Crypto crypto;
    private final String keyFactoryAlgorithm;
    private OAuthCredentials credentials;
 
    @Inject
    public OAuthCredentialsSupplier(@Identity String identity,
                                    @Credential String privateKeyInPemFormat,
-                                   @Named(SIGNATURE_OR_MAC_ALGORITHM) String signatureOrMacAlgorithm,
-                                   Crypto crypto) {
+                                   @Named(SIGNATURE_OR_MAC_ALGORITHM) String signatureOrMacAlgorithm) {
       this.identity = identity;
       this.privateKeyInPemFormat = privateKeyInPemFormat;
       checkState(OAUTH_ALGORITHM_NAMES_TO_KEYFACTORY_ALGORITHM_NAMES.containsKey(signatureOrMacAlgorithm),
               format("No mapping for key factory for algorithm: %s", signatureOrMacAlgorithm));
       this.keyFactoryAlgorithm = OAUTH_ALGORITHM_NAMES_TO_KEYFACTORY_ALGORITHM_NAMES.get(signatureOrMacAlgorithm);
-      this.crypto = crypto;
    }
 
    @PostConstruct
@@ -80,7 +76,7 @@ public class OAuthCredentialsSupplier implements Supplier<OAuthCredentials> {
                  (privateKeyInPemFormat).build();
          return;
       }
-      KeyFactory keyFactory = crypto.keyFactory(keyFactoryAlgorithm);
+      KeyFactory keyFactory = KeyFactory.getInstance(keyFactoryAlgorithm);
       PrivateKey privateKey = keyFactory.generatePrivate(Pems.privateKeySpec(Payloads.newStringPayload
               (privateKeyInPemFormat)));
       this.credentials = new OAuthCredentials.Builder().identity(identity).credential

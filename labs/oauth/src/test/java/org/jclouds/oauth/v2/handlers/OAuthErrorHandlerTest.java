@@ -33,30 +33,30 @@ import static org.easymock.EasyMock.reportMatcher;
 import static org.easymock.EasyMock.verify;
 
 /**
- * 
  * @author Adrian Cole
  */
-@Test(groups = "unit", testName = "OAuthErrorHandlerTest")
+@Test(groups = "unit")
 public class OAuthErrorHandlerTest {
-   
+
    @Test
    public void test409MakesIllegalStateException() {
       assertCodeMakes(
-               "POST",
-               URI.create("http://oauth.org"),
-               409,
-               "HTTP/1.1 409 Conflict",
-               "\"{\"code\":\"InvalidState\",\"message\":\"An incompatible transition has already been queued for this resource\"}\"",
-               IllegalStateException.class);
+              "POST",
+              URI.create("http://oauth.org"),
+              409,
+              "HTTP/1.1 409 Conflict",
+              "\"{\"code\":\"InvalidState\",\"message\":\"An incompatible transition has already been queued for this" +
+                      " resource\"}\"",
+              IllegalStateException.class);
    }
 
    private void assertCodeMakes(String method, URI uri, int statusCode, String message, String content,
-         Class<? extends Exception> expected) {
+                                Class<? extends Exception> expected) {
       assertCodeMakes(method, uri, statusCode, message, "application/json", content, expected);
    }
 
    private void assertCodeMakes(String method, URI uri, int statusCode, String message, String contentType,
-         String content, Class<? extends Exception> expected) {
+                                String content, Class<? extends Exception> expected) {
 
       OAuthErrorHandler function = new OAuthErrorHandler();
 

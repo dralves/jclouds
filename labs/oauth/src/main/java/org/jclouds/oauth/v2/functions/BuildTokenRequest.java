@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.Preconditions.checkState;
 import static org.jclouds.oauth.v2.OAuthConstants.ADDITIONAL_CLAIMS;
 import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_OR_MAC_ALGORITHM;
-import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_ASSERTION_DESCRIPTION;
+import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_AUDIENCE;
 
 /**
  * The default authenticator.
@@ -68,7 +68,7 @@ public class BuildTokenRequest implements Function<GeneratedHttpRequest, TokenRe
    public Ticker ticker = Ticker.systemTicker();
 
    @Inject
-   public BuildTokenRequest(@Named(TOKEN_ASSERTION_DESCRIPTION) String assertionTargetDescription,
+   public BuildTokenRequest(@Named(TOKEN_AUDIENCE) String assertionTargetDescription,
                             @Named(SIGNATURE_OR_MAC_ALGORITHM) String signatureAlgorithm,
                             TokenRequestFormat tokenRequestFormat, Supplier<OAuthCredentials> credentialsSupplier) {
       this.assertionTargetDescription = assertionTargetDescription;

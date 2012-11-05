@@ -19,9 +19,9 @@
 package org.jclouds.oauth.v2.functions;
 
 import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
-import org.jclouds.crypto.Crypto;
 import org.jclouds.oauth.v2.domain.OAuthCredentials;
 
 import javax.annotation.PostConstruct;
@@ -51,29 +51,26 @@ public class SignOrProduceMacForToken implements Function<byte[], byte[]> {
    private final Supplier<OAuthCredentials> credentials;
    private final String signatureOrMacAlgorithm;
    private Function<byte[], byte[]> signatureOrMacFunction;
-   private Crypto crypto;
 
 
    @Inject
    public SignOrProduceMacForToken(@Named(SIGNATURE_OR_MAC_ALGORITHM) String signatureOrMacAlgorithm,
-                                   Supplier<OAuthCredentials> credentials, Crypto crypto) {
+                                   Supplier<OAuthCredentials> credentials) {
       checkState(OAUTH_ALGORITHM_NAMES_TO_SIGNATURE_ALGORITHM_NAMES.containsKey(signatureOrMacAlgorithm),
               format("the signature algorithm %s is not supported", signatureOrMacAlgorithm));
       this.signatureOrMacAlgorithm = OAUTH_ALGORITHM_NAMES_TO_SIGNATURE_ALGORITHM_NAMES.get(signatureOrMacAlgorithm);
       this.credentials = credentials;
-      this.crypto = crypto;
    }
 
    @PostConstruct
    public void loadSignatureOrMacOrNone() throws InvalidKeyException, NoSuchAlgorithmException {
       if (signatureOrMacAlgorithm.equals(NO_ALGORITHM)) {
-         this.signatureOrMacFunction = new IdentityGenerator();
+         this.signatureOrMacFunction = Functions.identity();
       } else if (signatureOrMacAlgorithm.startsWith("SHA")) {
-         this.signatureOrMacFunction = new SignatureGenerator(signatureOrMacAlgorithm, credentials.get().privateKey,
-                 crypto);
+         this.signatureOrMacFunction = new SignatureGenerator(signatureOrMacAlgorithm, credentials.get().privateKey);
       } else {
          this.signatureOrMacFunction = new MessageAuthenticationCodeGenerator(signatureOrMacAlgorithm,
-                 credentials.get().privateKey, crypto);
+                 credentials.get().privateKey);
       }
    }
 
@@ -86,9 +83,9 @@ public class SignOrProduceMacForToken implements Function<byte[], byte[]> {
 
       private Mac mac;
 
-      private MessageAuthenticationCodeGenerator(String macAlgorithm, PrivateKey privateKey,
-                                                 Crypto crypto) throws NoSuchAlgorithmException, InvalidKeyException {
-         this.mac = crypto.hmac(macAlgorithm);
+      private MessageAuthenticationCodeGenerator(String macAlgorithm, PrivateKey privateKey) throws
+              NoSuchAlgorithmException, InvalidKeyException {
+         this.mac = Mac.getInstance(macAlgorithm);
          this.mac.init(privateKey);
       }
 
@@ -103,9 +100,9 @@ public class SignOrProduceMacForToken implements Function<byte[], byte[]> {
 
       private Signature signature;
 
-      private SignatureGenerator(String signatureAlgorithm, PrivateKey privateKey,
-                                 Crypto crypto) throws NoSuchAlgorithmException, InvalidKeyException {
-         this.signature = crypto.signature(signatureAlgorithm);
+      private SignatureGenerator(String signatureAlgorithm, PrivateKey privateKey) throws NoSuchAlgorithmException,
+              InvalidKeyException {
+         this.signature = Signature.getInstance(signatureAlgorithm);
          this.signature.initSign(privateKey);
       }
 
@@ -117,14 +114,6 @@ public class SignOrProduceMacForToken implements Function<byte[], byte[]> {
          } catch (SignatureException e) {
             throw Throwables.propagate(e);
          }
-      }
-   }
-
-   private static class IdentityGenerator implements Function<byte[], byte[]> {
-
-      @Override
-      public byte[] apply(byte[] input) {
-         return input;
       }
    }
 }

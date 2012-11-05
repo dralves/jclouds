@@ -25,7 +25,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_ASSERTION_DESCRIPTION;
+import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_AUDIENCE;
 
 /**
  * Utils for OAuth tests.
@@ -41,7 +41,7 @@ public class OAuthTestUtils {
          properties.put("oauth.credential", Strings2.toStringAndClose(new FileInputStream("src/test/resources/testpk" +
                  ".pem")));
          properties.put("oauth.endpoint", "http://localhost:5000/o/oauth2/token");
-         properties.put(TOKEN_ASSERTION_DESCRIPTION, "https://accounts.google.com/o/oauth2/token");
+         properties.put(TOKEN_AUDIENCE, "https://accounts.google.com/o/oauth2/token");
          return properties;
       } catch (IOException e) {
          throw Throwables.propagate(e);

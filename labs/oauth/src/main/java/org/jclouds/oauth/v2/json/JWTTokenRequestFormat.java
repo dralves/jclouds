@@ -18,6 +18,7 @@
  */
 package org.jclouds.oauth.v2.json;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMultimap;
@@ -36,7 +37,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
 import static com.google.common.base.Joiner.on;
-import static org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString;
+import static org.jclouds.oauth.org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString;
 
 /**
  * Formats a token request into JWT format namely:
@@ -55,7 +56,6 @@ public class JWTTokenRequestFormat implements TokenRequestFormat {
    @Resource
    private Logger logger = Logger.NULL;
 
-   private static final String UTF_8 = "UTF-8";
    private static final String ASSERTION_FORM_PARAM = "assertion";
    private static final String GRANT_TYPE_FORM_PARAM = "grant_type";
    private static final String GRANT_TYPE_JWT_BEARER = "urn:ietf:params:oauth:grant-type:jwt-bearer";
@@ -80,15 +80,10 @@ public class JWTTokenRequestFormat implements TokenRequestFormat {
 
       String encodedSignature = null;
 
-      try {
-         encodedHeader = encodeBase64URLSafeString(encodedHeader.getBytes(UTF_8));
-         encodedClaimSet = encodeBase64URLSafeString(encodedClaimSet.getBytes(UTF_8));
-         encodedSignature = encodeBase64URLSafeString(signer.apply(on(".").join(encodedHeader,
-                 encodedClaimSet).getBytes(UTF_8)));
-
-      } catch (UnsupportedEncodingException e) {
-         throw Throwables.propagate(e);
-      }
+      encodedHeader = encodeBase64URLSafeString(encodedHeader.getBytes(Charsets.UTF_8));
+      encodedClaimSet = encodeBase64URLSafeString(encodedClaimSet.getBytes(Charsets.UTF_8));
+      encodedSignature = encodeBase64URLSafeString(signer.apply(on(".").join(encodedHeader,
+              encodedClaimSet).getBytes(Charsets.UTF_8)));
 
       // the final assertion in base 64 encoded {header}.{claimSet}.{signature} format
       String assertion = on(".").join(encodedHeader, encodedClaimSet, encodedSignature);

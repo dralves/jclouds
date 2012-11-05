@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to jclouds, Inc. (jclouds) under one or more
  * contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,27 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.jclouds.oauth.v2;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.reflect.TypeToken;
-import org.jclouds.View;
-import org.jclouds.apis.internal.BaseApiMetadataTest;
+package org.jclouds.oauth.v2.parse;
+
+import org.jclouds.json.BaseItemParserTest;
+import org.jclouds.oauth.v2.domain.Token;
+import org.jclouds.rest.annotations.SelectJson;
 import org.testng.annotations.Test;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.core.MediaType;
+
 /**
- * Tests that OAuthApiMetadata is properly registered in ServiceLoader
- * <p/>
- * <pre>
- * META-INF/services/org.jclouds.apis.ApiMetadata
- * </pre>
- *
- * @author Adrian Cole
+ * @author David Alves
  */
 @Test(groups = "unit")
-public class OAuthApiMetadataTest extends BaseApiMetadataTest {
+public class ParseTokenTest extends BaseItemParserTest<Token> {
 
-   public OAuthApiMetadataTest() {
-      super(new OAuthApiMetadata(), ImmutableSet.<TypeToken<? extends View>>of());
+   @Override
+   public String resource() {
+      return "/oauthTokenResponse.json";
+   }
+
+   @Override
+   @Consumes(MediaType.APPLICATION_JSON)
+   public Token expected() {
+      return Token.builder().expiresIn(3600).tokenType("Bearer").accessToken
+              ("1/8xbJqaOZXSUZbHLl5EOtu1pxz3fmmetKx9W8CV4t79M").build();
    }
 }

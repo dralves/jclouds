@@ -18,8 +18,7 @@
  */
 package org.jclouds.oauth.v2.functions;
 
-import org.apache.commons.codec.binary.Base64;
-import org.jclouds.encryption.internal.JCECrypto;
+import org.jclouds.oauth.org.apache.commons.codec.binary.Base64;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ import static org.testng.Assert.assertNotNull;
  *
  * @author David Alves
  */
-@Test(groups = "unit", testName = "SignerFunctionTest")
+@Test(groups = "unit")
 public class SignerFunctionTest {
 
    private static final String PAYLOAD = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.\n" +
@@ -57,7 +56,7 @@ public class SignerFunctionTest {
            CertificateException, InvalidKeySpecException {
       SignOrProduceMacForToken signer = new SignOrProduceMacForToken("RS256",
               ofInstance(OAuthCredentialsFromPKTest
-                      .loadOAuthCredentials()), new JCECrypto());
+                      .loadOAuthCredentials()));
       signer.loadSignatureOrMacOrNone();
       byte[] payloadSignature = signer.apply(PAYLOAD.getBytes("UTF-8"));
       assertNotNull(payloadSignature);

@@ -34,7 +34,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
-import static org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString;
+import static org.jclouds.oauth.org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString;
 import static org.testng.Assert.assertEquals;
 
 /**
@@ -42,7 +42,7 @@ import static org.testng.Assert.assertEquals;
  *
  * @author David Alves
  */
-@Test(groups = "unit", testName = "OAuthTokenRequestExpectTest")
+@Test(groups = "unit")
 public class OAuthTokenRequestExpectTest extends BaseOAuthApiExpectTest {
 
    private static final String header = "{\"alg\":\"RS256\",\"typ\":\"JWT\"}";
@@ -99,5 +99,4 @@ public class OAuthTokenRequestExpectTest extends BaseOAuthApiExpectTest {
       OAuthApi api = requestSendsResponse(TOKEN_REQUEST, TOKEN_RESPONSE);
       assertEquals(api.authenticate(new TokenRequest(HEADER, CLAIM_SET)), TOKEN);
    }
-
 }

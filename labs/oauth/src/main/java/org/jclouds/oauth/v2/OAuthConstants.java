@@ -42,9 +42,12 @@ public class OAuthConstants {
    public static final String NO_ALGORITHM = "none";
 
    /**
-    * The assertion target
+    * The oauth audience, who this token is intended for. For instance in JWT and for
+    * google API's this property maps to: {"aud","https://accounts.google.com/o/oauth2/token"}
+    *
+    * @see <a href="http://tools.ietf.org/html/draft-jones-json-web-token-04">doc</a>
     */
-   public static final String TOKEN_ASSERTION_DESCRIPTION = "jclouds.oauth.assertion-description";
+   public static final String TOKEN_AUDIENCE = "jclouds.oauth.audience";
 
    /**
     * The (optional) set of additional claims to use, provided in Map<String,String> form

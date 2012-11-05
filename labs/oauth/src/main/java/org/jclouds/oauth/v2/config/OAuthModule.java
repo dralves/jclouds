@@ -40,6 +40,7 @@ import org.jclouds.oauth.v2.json.ClaimSetTypeAdapter;
 import org.jclouds.oauth.v2.json.HeaderTypeAdapter;
 import org.jclouds.rest.internal.GeneratedHttpRequest;
 
+import javax.crypto.Mac;
 import javax.inject.Singleton;
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -65,9 +66,14 @@ public class OAuthModule extends AbstractModule {
       bind(new TypeLiteral<Function<TokenRequest, Token>>() {}).to(FetchToken.class);
    }
 
+   /**
+    * Provides a cache for tokens. Cache is time based and expires after 59 minutes (the maximum time a token is
+    * valid is 60 minutes)
+    */
    @Provides
    @Singleton
    public LoadingCache<TokenRequest, Token> provideAccessCache(Function<TokenRequest, Token> getAccess) {
       return CacheBuilder.newBuilder().expireAfterWrite(59, TimeUnit.MINUTES).build(CacheLoader.from(getAccess));
    }
+
 }

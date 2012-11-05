@@ -18,7 +18,6 @@
  */
 package org.jclouds.oauth.v2.functions;
 
-import org.jclouds.encryption.internal.JCECrypto;
 import org.jclouds.oauth.v2.domain.OAuthCredentials;
 import org.jclouds.util.Strings2;
 import org.testng.annotations.Test;
@@ -37,14 +36,13 @@ import static org.testng.Assert.assertNotNull;
 /**
  * Test loading the credentials by extracting a pk from a PKCS12 keystore.
  */
-@Test(groups = "unit", testName = "OAuthCredentialsFromPKTest")
+@Test(groups = "unit")
 public class OAuthCredentialsFromPKTest {
 
    public static OAuthCredentials loadOAuthCredentials() throws IOException, NoSuchAlgorithmException,
            CertificateException, InvalidKeySpecException {
       OAuthCredentialsSupplier loader = new OAuthCredentialsSupplier("foo",
-              Strings2.toStringAndClose(new FileInputStream("src/test/resources/testpk.pem")), "RS256",
-              new JCECrypto());
+              Strings2.toStringAndClose(new FileInputStream("src/test/resources/testpk.pem")), "RS256");
       loader.loadPrivateKey();
       return loader.get();
    }
