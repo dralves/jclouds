@@ -43,7 +43,7 @@ import static org.testng.Assert.assertEquals;
  * @author David Alves
  */
 @Test(groups = "unit")
-public class OAuthTokenRequestExpectTest extends BaseOAuthApiExpectTest {
+public class OAuthApiExpectTest extends BaseOAuthApiExpectTest {
 
    private static final String header = "{\"alg\":\"RS256\",\"typ\":\"JWT\"}";
 

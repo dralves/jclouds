@@ -40,8 +40,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.jclouds.oauth.v2.OAuthConstants.ADDITIONAL_CLAIMS;
+import static org.jclouds.oauth.v2.OAuthConstants.SCOPES;
 import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_OR_MAC_ALGORITHM;
-import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_AUDIENCE;
+import static org.jclouds.oauth.v2.OAuthConstants.AUDIENCE;
 
 /**
  * The default authenticator.
@@ -64,11 +65,15 @@ public class BuildTokenRequest implements Function<GeneratedHttpRequest, TokenRe
    @Named(ADDITIONAL_CLAIMS)
    protected Map<String, String> additionalClaims = ImmutableMap.of();
 
+   @Inject(optional = true)
+   @Named(SCOPES)
+   protected String globalScopes = null;
+
    @VisibleForTesting
    public Ticker ticker = Ticker.systemTicker();
 
    @Inject
-   public BuildTokenRequest(@Named(TOKEN_AUDIENCE) String assertionTargetDescription,
+   public BuildTokenRequest(@Named(AUDIENCE) String assertionTargetDescription,
                             @Named(SIGNATURE_OR_MAC_ALGORITHM) String signatureAlgorithm,
                             TokenRequestFormat tokenRequestFormat, Supplier<OAuthCredentials> credentialsSupplier) {
       this.assertionTargetDescription = assertionTargetDescription;
@@ -87,11 +92,9 @@ public class BuildTokenRequest implements Function<GeneratedHttpRequest, TokenRe
               .type(tokenRequestFormat.getTypeName())
               .build();
 
-      OAuthScopes scopes = getOAuthScopes(request);
-
       ClaimSet claimSet = new ClaimSet.Builder(this.tokenRequestFormat.requiredClaims())
               .addClaim("iss", credentialsSupplier.get().identity)
-              .addClaim("scope", Joiner.on(",").join(scopes.value()))
+              .addClaim("scope", getOAuthScopes(request))
               .addClaim("aud", assertionTargetDescription)
               .emissionTime(now)
               .expirationTime(now + 3600)
@@ -104,13 +107,21 @@ public class BuildTokenRequest implements Function<GeneratedHttpRequest, TokenRe
               .build();
    }
 
-   protected OAuthScopes getOAuthScopes(GeneratedHttpRequest request) {
+   protected String getOAuthScopes(GeneratedHttpRequest request) {
       OAuthScopes classScopes = request.getDeclaring().getAnnotation(OAuthScopes.class);
       OAuthScopes methodScopes = request.getJavaMethod().getAnnotation(OAuthScopes.class);
-      checkState(classScopes != null || methodScopes != null, String.format("REST class or method must be annotated " +
-              "with OAuthScopes specifying required permissions. Class: %s, Method: %s",
-              request.getDeclaring().getName(),
-              request.getJavaMethod().getName()));
-      return methodScopes != null ? methodScopes : classScopes;
+
+      // if no annotations are present the rely on globally set scopes
+      if (classScopes == null && methodScopes == null) {
+         checkState(globalScopes != null, String.format("REST class or method should be annotated " +
+                 "with OAuthScopes specifying required permissions. Alternatively a global property " +
+                 "\"oauth.scopes\" may be set to define scopes globally. REST Class: %s, Method: %s",
+                 request.getDeclaring().getName(),
+                 request.getJavaMethod().getName()));
+         return globalScopes;
+      }
+
+      OAuthScopes scopes = methodScopes != null ? methodScopes : classScopes;
+      return Joiner.on(",").join(scopes.value());
    }
 }
