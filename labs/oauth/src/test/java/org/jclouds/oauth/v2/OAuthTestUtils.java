@@ -21,10 +21,14 @@ package org.jclouds.oauth.v2;
 import com.google.common.base.Throwables;
 import org.jclouds.util.Strings2;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static org.jclouds.oauth.v2.OAuthConstants.TOKEN_AUDIENCE;
 
 /**
@@ -46,5 +50,31 @@ public class OAuthTestUtils {
       } catch (IOException e) {
          throw Throwables.propagate(e);
       }
+   }
+
+   /**
+    * Loads the set of properties inside a properties file given an file location. Transforms the namespace of the
+    * properties inside the file from oauth to whatever provider is passed as argument. Allows to have a single
+    * properties file for multiple providers that use the same oauth identity and pk.
+    * <p/>
+    * Usually the properties that can be found inside the file are:
+    * - oauth.identity (mandatory) - the oauth account id
+    * - oauth.credential (mandatory) - the oauth private key
+    * - oauth.endpoint (optional) - the oauth endpoint to use for authentication and authorization
+    */
+   public static Properties loadPropertiesFile(Properties properties, String callerProvider) throws IOException {
+      checkNotNull(callerProvider);
+      if (properties == null) {
+         properties = new Properties(System.getProperties());
+      }
+      String propertiesFilePath = (String) properties.get("test.oauth.properties");
+      if (propertiesFilePath != null && new File(propertiesFilePath).exists()) {
+         properties.load(new FileReader(propertiesFilePath));
+      }
+      checkState(properties.contains("oauth.identity"));
+      checkState(properties.contains("oauth.credential"));
+      properties.put(callerProvider + ".identity", properties.get("oauth.identity"));
+      properties.put(callerProvider + ".credential", properties.get("oauth.credential"));
+      return properties;
    }
 }
