@@ -47,12 +47,17 @@ public class OAuthConstants {
     *
     * @see <a href="http://tools.ietf.org/html/draft-jones-json-web-token-04">doc</a>
     */
-   public static final String TOKEN_AUDIENCE = "jclouds.oauth.audience";
+   public static final String AUDIENCE = "jclouds.oauth.audience";
 
    /**
     * The (optional) set of additional claims to use, provided in Map<String,String> form
     */
    public static final String ADDITIONAL_CLAIMS = "jclouds.oauth.additional-claims";
+
+   /**
+    * Optional list of comma-separated scopes to use when no OAuthScopes annotation is present.
+    */
+   public static final String SCOPES = "jclouds.oauth.scopes";
 
    /**
     * Static mapping between the oauth algorithm name and the Crypto provider signature algorithm name.

@@ -35,11 +35,11 @@
 
     <properties>
         <jclouds.version>1.6.0-SNAPSHOT</jclouds.version>
-        <test.oauth.identity>service_account</test.oauth.identity>
-        <test.oauth.credential>service_key</test.oauth.credential>
+        <test.oauth.identity>FIX_ME</test.oauth.identity>
+        <test.oauth.credential>FIX_ME</test.oauth.credential>
+        <test.oauth.endpoint>FIX_ME</test.oauth.endpoint>
         <test.oauth.api-version>2</test.oauth.api-version>
         <test.oauth.build-version></test.oauth.build-version>
-        <test.oauth.endpoint>http://oauth.org</test.oauth.endpoint>
     </properties>
 
     <dependencies>
@@ -64,7 +64,6 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.0.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

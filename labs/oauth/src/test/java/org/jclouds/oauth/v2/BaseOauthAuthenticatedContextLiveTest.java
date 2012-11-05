@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to jclouds, Inc. (jclouds) under one or more
  * contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,21 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.jclouds.oauth.v2.internal;
 
-import com.google.common.base.Ticker;
-import com.google.common.reflect.TypeToken;
+package org.jclouds.oauth.v2;
+
 import org.jclouds.apis.BaseContextLiveTest;
-import org.jclouds.oauth.v2.OAuthApi;
-import org.jclouds.oauth.v2.OAuthApiMetadata;
-import org.jclouds.oauth.v2.OAuthAsyncApi;
+import org.jclouds.rest.AuthorizationException;
 import org.jclouds.rest.RestContext;
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.Test;
 
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.jclouds.oauth.v2.OAuthConstants.AUDIENCE;
@@ -38,31 +34,28 @@ import static org.jclouds.oauth.v2.OAuthConstants.SCOPES;
 import static org.jclouds.oauth.v2.OAuthConstants.SIGNATURE_OR_MAC_ALGORITHM;
 import static org.jclouds.oauth.v2.OAuthTestUtils.setCredentialFromPemFile;
 
-
 /**
+ * A base test of oauth authenticated rest providers. Providers must set the following properties:
+ * <p/>
+ * - oauth.endpoint
+ * - oauth.audience
+ * - oauth.signature-or-mac-algorithm
+ * - oauth.scopes (optional, providers may choose to annotate REST methods or classes with OAuthScopes)
+ *
  * @author David Alves
  */
+
 @Test(groups = "live")
-public class BaseOAuthApiLiveTest extends BaseContextLiveTest<RestContext<OAuthApi, OAuthAsyncApi>> {
+public abstract class BaseOauthAuthenticatedContextLiveTest<Api, AsyncApi> extends BaseContextLiveTest<RestContext<Api,
+        AsyncApi>> {
 
-   public BaseOAuthApiLiveTest() {
-      provider = "oauth";
-   }
-
-   @Override
-   protected TypeToken<RestContext<OAuthApi, OAuthAsyncApi>> contextType() {
-      return OAuthApiMetadata.CONTEXT_TOKEN;
-   }
-
-   protected RestContext<OAuthApi, OAuthAsyncApi> oauthContext;
-   protected Properties properties;
 
    @BeforeGroups(groups = {"integration", "live"})
    @Override
    public void setupContext() {
       super.setupContext();
-      oauthContext = context;
    }
+
 
    @Override
    protected Properties setupProperties() {
@@ -72,21 +65,24 @@ public class BaseOAuthApiLiveTest extends BaseContextLiveTest<RestContext<OAuthA
       checkNotNull(setIfTestSystemPropertyPresent(props, AUDIENCE), "test.oauth.audience must be set");
       setIfTestSystemPropertyPresent(props, SCOPES);
       setIfTestSystemPropertyPresent(props, SIGNATURE_OR_MAC_ALGORITHM);
-      this.properties = props;
       return props;
    }
 
+
+   /**
+    * Subclasses must override and call one of the REST api methods.
+    * <p/>
+    * This is just for the purpose of testing authentication so the chosen method should have no side effects (e.g.
+    * listSomething()).
+    * <p/>
+    */
+   public abstract void testCallRestApi() throws AuthorizationException;
+
+
    @AfterGroups(groups = "live")
    protected void tearDown() {
-      if (oauthContext != null)
-         oauthContext.close();
+      if (context != null)
+         context.close();
    }
-
-
-   protected long nowInSeconds() {
-      return TimeUnit.SECONDS.convert(Ticker.systemTicker().read(), TimeUnit.NANOSECONDS);
-   }
-
 
 }
-

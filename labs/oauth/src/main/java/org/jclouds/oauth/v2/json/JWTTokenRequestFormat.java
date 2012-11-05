@@ -20,20 +20,16 @@ package org.jclouds.oauth.v2.json;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import org.jclouds.http.HttpRequest;
 import org.jclouds.io.Payloads;
 import org.jclouds.json.Json;
-import org.jclouds.logging.Logger;
 import org.jclouds.oauth.v2.domain.TokenRequest;
 import org.jclouds.oauth.v2.domain.TokenRequestFormat;
 
-import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
 import static com.google.common.base.Joiner.on;
@@ -52,9 +48,6 @@ import static org.jclouds.oauth.org.apache.commons.codec.binary.Base64.encodeBas
  */
 @Singleton
 public class JWTTokenRequestFormat implements TokenRequestFormat {
-
-   @Resource
-   private Logger logger = Logger.NULL;
 
    private static final String ASSERTION_FORM_PARAM = "assertion";
    private static final String GRANT_TYPE_FORM_PARAM = "grant_type";
