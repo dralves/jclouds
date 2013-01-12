@@ -131,12 +131,11 @@ public class HttpCommand {
 
    @Override
    public String toString() {
-      if (request instanceof GeneratedHttpRequest)
-         return String.format("[method=%s.%s, request=%s]", GeneratedHttpRequest.class.cast(request).getDeclaring()
-                  .getSimpleName(), GeneratedHttpRequest.class.cast(request).getInvoker().getName(), request
-                  .getRequestLine());
-      else
-         return "[request=" + request.getRequestLine() + "]";
+      if (request instanceof GeneratedHttpRequest) {
+         GeneratedHttpRequest gRequest = GeneratedHttpRequest.class.cast(request);
+         return String.format("[method=%s, request=%s]", gRequest.getInvocation(), gRequest.getRequestLine());
+      }
+      return "[request=" + request.getRequestLine() + "]";
    }
 
 }
