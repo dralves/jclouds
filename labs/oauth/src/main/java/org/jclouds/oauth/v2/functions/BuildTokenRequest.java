@@ -43,6 +43,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.reflect.Invokable;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -56,7 +57,7 @@ import com.google.inject.name.Named;
  * @author David Alves
  */
 @Singleton
-public class BuildTokenRequest implements Function<GeneratedHttpRequest, TokenRequest> {
+public class BuildTokenRequest implements Function<GeneratedHttpRequest<?>, TokenRequest> {
 
    private final String assertionTargetDescription;
    private final String signatureAlgorithm;
@@ -89,7 +90,7 @@ public class BuildTokenRequest implements Function<GeneratedHttpRequest, TokenRe
    }
 
    @Override
-   public TokenRequest apply(GeneratedHttpRequest request) {
+   public TokenRequest apply(GeneratedHttpRequest<?> request) {
       long now = TimeUnit.SECONDS.convert(ticker.read(), TimeUnit.NANOSECONDS);
 
       // fetch the token
@@ -113,17 +114,19 @@ public class BuildTokenRequest implements Function<GeneratedHttpRequest, TokenRe
               .build();
    }
 
-   protected String getOAuthScopes(GeneratedHttpRequest request) {
-      OAuthScopes classScopes = request.getDeclaring().getAnnotation(OAuthScopes.class);
-      OAuthScopes methodScopes = request.getInvoker().getAnnotation(OAuthScopes.class);
+   protected String getOAuthScopes(GeneratedHttpRequest<?> request) {
+      Invokable<?, ?> invokable = request.getInvocation().getInvokable();
+      
+      OAuthScopes classScopes = request.getEnclosingType().getRawType().getAnnotation(OAuthScopes.class);
+      OAuthScopes methodScopes = invokable.getAnnotation(OAuthScopes.class);
 
       // if no annotations are present the rely on globally set scopes
       if (classScopes == null && methodScopes == null) {
          checkState(globalScopes != null, String.format("REST class or method should be annotated " +
                  "with OAuthScopes specifying required permissions. Alternatively a global property " +
                  "\"oauth.scopes\" may be set to define scopes globally. REST Class: %s, Method: %s",
-                 request.getDeclaring().getName(),
-                 request.getInvoker().getName()));
+                 request.getEnclosingType(),
+                 invokable.getName()));
          return globalScopes;
       }
 

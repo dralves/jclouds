@@ -27,12 +27,14 @@ import static org.testng.Assert.assertFalse;
 
 import org.jclouds.aws.AWSResponseException;
 import org.jclouds.aws.domain.AWSError;
+import org.jclouds.reflect.Invocation;
 import org.jclouds.rest.internal.GeneratedHttpRequest;
 import org.jclouds.s3.S3Client;
 import org.jclouds.s3.options.PutBucketOptions;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.google.common.collect.Lists;
 import com.google.common.reflect.Invokable;
 
 /**
@@ -41,18 +43,16 @@ import com.google.common.reflect.Invokable;
 @Test(testName = "FalseIfBucketAlreadyOwnedByYouOrOperationAbortedWhenBucketExistsTest")
 public class FalseIfBucketAlreadyOwnedByYouOrOperationAbortedWhenBucketExistsTest {
 
-   GeneratedHttpRequest putBucket;
+   GeneratedHttpRequest<S3Client> putBucket;
 
    @BeforeClass
    void setUp() throws SecurityException, NoSuchMethodException {
-      putBucket = GeneratedHttpRequest
-            .builder()
+      putBucket = GeneratedHttpRequest.builder(S3Client.class)
             .method("PUT")
             .endpoint("https://adriancole-blobstore113.s3.amazonaws.com/")
-            .declaring(S3Client.class)
-            .invoker(Invokable.from(
-                  S3Client.class.getMethod("putBucketInRegion", String.class, String.class, PutBucketOptions[].class)))
-            .args(new Object[] { null, "bucket" }).build();
+            .invocation(
+                  Invocation.create(Invokable.from(S3Client.class.getMethod("putBucketInRegion", String.class,
+                        String.class, PutBucketOptions[].class)), Lists.<Object> newArrayList(null, "bucket"))).build();
    }
 
    @Test

@@ -28,17 +28,23 @@ import java.lang.annotation.Target;
 import javax.inject.Qualifier;
 
 import org.jclouds.http.HttpResponse;
+import org.jclouds.http.functions.config.SaxParserModule;
 import org.jclouds.io.Payload;
 import org.jclouds.io.Payloads;
 import org.jclouds.json.config.GsonModule;
-import org.jclouds.rest.internal.AsyncRestClientProxy;
+import org.jclouds.reflect.Invocation;
+import com.google.common.reflect.Invokable;
+import org.jclouds.rest.internal.TransformerForRequest;
 import org.testng.annotations.Test;
 
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
-import com.google.common.reflect.Invokable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.reflect.TypeParameter;
+import com.google.common.reflect.TypeToken;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 
 /**
  * 
@@ -55,9 +61,19 @@ public abstract class BaseParserTest<T, G> {
 
    @SuppressWarnings("unchecked")
    protected Function<HttpResponse, T> parser(Injector i) {
+      TypeToken<TransformerForRequest<T>> token = new TypeToken<TransformerForRequest<T>>() {
+         private static final long serialVersionUID = 1L;
+      }.where(new TypeParameter<T>() {
+      }, new TypeToken<T>(getClass()) {
+         private static final long serialVersionUID = 1L;
+      });
+      Key<TransformerForRequest<T>> xform = (Key<TransformerForRequest<T>>) Key.get(token.getType());
       try {
-         return (Function<HttpResponse, T>) AsyncRestClientProxy.getTransformerForMethod(
-               Invokable.from(getClass().getMethod("expected")), i);
+         return (Function<HttpResponse, T>) i
+               .createChildInjector(new SaxParserModule())
+               .getInstance(xform)
+               .getTransformerForMethod(
+                     Invocation.create(Invokable.from(getClass().getMethod("expected")), ImmutableList.of()), i);
       } catch (Exception e) {
          throw Throwables.propagate(e);
       }
@@ -81,13 +97,10 @@ public abstract class BaseParserTest<T, G> {
 
    protected Injector injector() {
       return Guice.createInjector(new GsonModule() {
-
-         @Override
          protected void configure() {
             bind(DateAdapter.class).to(Iso8601DateAdapter.class);
             super.configure();
          }
-
       });
 
    }

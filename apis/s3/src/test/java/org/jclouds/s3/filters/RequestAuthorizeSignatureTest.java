@@ -87,7 +87,7 @@ public class RequestAuthorizeSignatureTest extends BaseS3AsyncClientTest<S3Async
 
    @Test
    void testAppendBucketNameHostHeader() throws SecurityException, NoSuchMethodException {
-      HttpRequest request = processor.createRequest(
+      GeneratedHttpRequest request = processor.createRequest(
             Invokable.from(S3AsyncClient.class.getMethod("getBucketLocation", String.class)),
             ImmutableList.<Object> of("bucket"));
       StringBuilder builder = new StringBuilder();
@@ -144,7 +144,7 @@ public class RequestAuthorizeSignatureTest extends BaseS3AsyncClientTest<S3Async
 
    @Test
    void testAppendBucketNameURIHost() throws SecurityException, NoSuchMethodException {
-      HttpRequest request = processor.createRequest(
+      GeneratedHttpRequest request = processor.createRequest(
             Invokable.from(S3AsyncClient.class.getMethod("getBucketLocation", String.class)),
             ImmutableList.<Object> of("bucket"));
       assertEquals(request.getEndpoint().getHost(), "bucket.s3.amazonaws.com");

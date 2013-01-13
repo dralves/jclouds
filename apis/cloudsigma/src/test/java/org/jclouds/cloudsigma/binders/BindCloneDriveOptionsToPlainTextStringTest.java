@@ -18,20 +18,20 @@
  */
 package org.jclouds.cloudsigma.binders;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import org.jclouds.cloudsigma.options.CloneDriveOptions;
-import org.jclouds.io.MutableContentMetadata;
-import org.jclouds.io.Payload;
+import org.jclouds.reflect.Invocation;
+import com.google.common.reflect.Invokable;
 import org.jclouds.rest.internal.GeneratedHttpRequest;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -40,42 +40,37 @@ import com.google.inject.Guice;
  * 
  * @author Adrian Cole
  */
-@Test(groups = { "unit" })
+@Test(groups = "unit")
 public class BindCloneDriveOptionsToPlainTextStringTest {
 
    private static final BindCloneDriveOptionsToPlainTextString binder = Guice.createInjector().getInstance(
          BindCloneDriveOptionsToPlainTextString.class);
 
    public void testDefault() throws IOException {
-      assertInputAndArgsCreatesPayload(ImmutableMap.<String, Object>of("name", "newdrive"), ImmutableList.<Object> of(),
-            "name newdrive");
+      String expected = "name newdrive";
+      GeneratedHttpRequest request = requestForArgs(ImmutableList.<Object> of());
+
+      Map<String, Object> map = ImmutableMap.<String, Object> of("name", "newdrive");
+      assertEquals(binder.bindToRequest(request, map).getPayload().getRawContent(), expected);
    }
 
    public void testWithSize() throws IOException {
-      assertInputAndArgsCreatesPayload(ImmutableMap.<String, Object>of("name", "newdrive"),
-            ImmutableList.<Object> of(new CloneDriveOptions().size(1024)), "name newdrive\nsize 1024");
+      String expected = "name newdrive\nsize 1024";
+      GeneratedHttpRequest request = requestForArgs(ImmutableList.<Object> of(new CloneDriveOptions().size(1024)));
+
+      Map<String, Object> map = ImmutableMap.<String, Object> of("name", "newdrive");
+      assertEquals(binder.bindToRequest(request, map).getPayload().getRawContent(), expected);
    }
 
-   protected void assertInputAndArgsCreatesPayload(ImmutableMap<String, Object> inputMap, List<Object> args,
-         String expected) {
-      GeneratedHttpRequest request = createMock(GeneratedHttpRequest.class);
-      expect(request.getArgs()).andReturn(args).atLeastOnce();
-      request.setPayload(expected);
-      Payload payload = createMock(Payload.class);
-      expect(request.getPayload()).andReturn(payload);
-      MutableContentMetadata md = createMock(MutableContentMetadata.class);
-      expect(payload.getContentMetadata()).andReturn(md);
-      md.setContentType("text/plain");
-
-      replay(request);
-      replay(payload);
-      replay(md);
-
-      binder.bindToRequest(request, inputMap);
-
-      verify(request);
-      verify(payload);
-      verify(md);
+   protected GeneratedHttpRequest requestForArgs(List<Object> args) {
+      try {
+         Invocation invocation = Invocation.create(Invokable.from(String.class.getDeclaredMethod("toString")), args);
+         return GeneratedHttpRequest.builder(String.class).method("POST").endpoint(URI.create("http://localhost/key"))
+               .invocation(invocation).build();
+      } catch (SecurityException e) {
+         throw Throwables.propagate(e);
+      } catch (NoSuchMethodException e) {
+         throw Throwables.propagate(e);
+      }
    }
-
 }
