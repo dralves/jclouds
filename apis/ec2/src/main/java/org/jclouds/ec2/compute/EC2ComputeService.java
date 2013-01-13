@@ -17,6 +17,8 @@
  * under the License.
  */
 package org.jclouds.ec2.compute;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.transform;
@@ -28,13 +30,11 @@ import static org.jclouds.compute.util.ComputeServiceUtils.addMetadataAndParseTa
 import static org.jclouds.compute.util.ComputeServiceUtils.metadataAndTagsAsValuesOfEmptyString;
 import static org.jclouds.ec2.reference.EC2Constants.PROPERTY_EC2_GENERATE_INSTANCE_NAMES;
 import static org.jclouds.ec2.util.Tags.resourceToTagsAsMap;
-import static org.jclouds.util.Preconditions2.checkNotEmpty;
 
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Named;
@@ -95,6 +95,7 @@ import com.google.common.collect.ImmutableMultimap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.inject.Inject;
 
 /**
@@ -123,7 +124,7 @@ public class EC2ComputeService extends BaseComputeService {
             InitializeRunScriptOnNodeOrPlaceInBadMap.Factory initScriptRunnerFactory,
             RunScriptOnNode.Factory runScriptOnNodeFactory, InitAdminAccess initAdminAccess,
             PersistNodeCredentials persistNodeCredentials, Timeouts timeouts,
-            @Named(Constants.PROPERTY_USER_THREADS) ExecutorService executor, EC2Client client,
+            @Named(Constants.PROPERTY_USER_THREADS) ListeningExecutorService userExecutor, EC2Client client,
             ConcurrentMap<RegionAndName, KeyPair> credentialsMap,
             @Named("SECURITY") LoadingCache<RegionAndName, String> securityGroupMap,
             Optional<ImageExtension> imageExtension, GroupNamingConvention.Factory namingConvention,
@@ -132,7 +133,7 @@ public class EC2ComputeService extends BaseComputeService {
                getNodeMetadataStrategy, runNodesAndAddToSetStrategy, rebootNodeStrategy, destroyNodeStrategy,
                startNodeStrategy, stopNodeStrategy, templateBuilderProvider, templateOptionsProvider, nodeRunning,
                nodeTerminated, nodeSuspended, initScriptRunnerFactory, initAdminAccess, runScriptOnNodeFactory,
-               persistNodeCredentials, timeouts, executor, imageExtension);
+               persistNodeCredentials, timeouts, userExecutor, imageExtension);
       this.client = client;
       this.credentialsMap = credentialsMap;
       this.securityGroupMap = securityGroupMap;
@@ -202,8 +203,8 @@ public class EC2ComputeService extends BaseComputeService {
     */
    @VisibleForTesting
    void deleteSecurityGroup(String region, String group) {
-      checkNotEmpty(region, "region");
-      checkNotEmpty(group, "group");
+      checkNotNull(emptyToNull(region), "region must be defined");
+      checkNotNull(emptyToNull(group), "group must be defined");
       String groupName = namingConvention.create().sharedNameForGroup(group);
       
       if (client.getSecurityGroupServices().describeSecurityGroupsInRegion(region, groupName).size() > 0) {

@@ -21,138 +21,126 @@ package org.jclouds.rest.internal;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import org.jclouds.http.HttpRequest;
 import org.jclouds.http.HttpRequestFilter;
-import org.jclouds.internal.ClassInvokerArgs;
 import org.jclouds.io.Payload;
 import org.jclouds.javax.annotation.Nullable;
+import org.jclouds.reflect.Invocation;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.reflect.Invokable;
+import com.google.common.reflect.TypeToken;
 
 /**
- * Represents a request generated from annotations
  * 
- * @author Adrian Cole
+ * @author adriancole
+ * 
+ * @param <A>
+ *           enclosing type of the interface parsed to generate this request.
  */
-// TODO: get rid of all the mock tests so that this can be made final
-public class GeneratedHttpRequest extends HttpRequest {
-   public static Builder builder() { 
-      return new Builder();
-   }
-   
-   public Builder toBuilder() { 
-      return new Builder().fromGeneratedHttpRequest(this);
+public final class GeneratedHttpRequest<A> extends HttpRequest {
+   public static <A> Builder<A> builder(Class<A> enclosingType) {
+      return new Builder<A>(TypeToken.of(enclosingType));
    }
 
-   public static class Builder extends HttpRequest.Builder<Builder>  {
-      protected Class<?> declaring;
-      protected Invokable<?, ?> invoker;
-      // args can be null, so cannot use immutable list
-      protected List<Object> args = Lists.newArrayList();
-      protected Optional<ClassInvokerArgs> caller = Optional.absent();
-      
-      /** 
-       * @see GeneratedHttpRequest#getDeclaring()
+   public static <A> Builder<A> builder(TypeToken<A> enclosingType) {
+      return new Builder<A>(enclosingType);
+   }
+
+   public Builder<A> toBuilder() {
+      return new Builder<A>(enclosingType).fromGeneratedHttpRequest(this);
+   }
+
+   public final static class Builder<A> extends HttpRequest.Builder<Builder<A>> {
+      private final TypeToken<A> enclosingType;
+
+      private Builder(TypeToken<A> enclosingType) {
+         this.enclosingType = checkNotNull(enclosingType, "enclosingType");
+      }
+
+      private Invocation invocation;
+      private Optional<TypeToken<?>> callerEnclosingType = Optional.absent();
+      private Optional<Invocation> caller = Optional.absent();
+
+      /**
+       * @see GeneratedHttpRequest#getInvocation()
        */
-      public Builder declaring(Class<?> declaring) {
-         this.declaring = checkNotNull(declaring, "declaring");
+      public Builder<A> invocation(Invocation invocation) {
+         this.invocation = checkNotNull(invocation, "invocation");
          return this;
       }
 
       /**
-       * @see GeneratedHttpRequest#getInvoker()
+       * @see GeneratedHttpRequest#getCallerEnclosingType()
        */
-      public Builder invoker(Invokable<?, ?> invoker) {
-         this.invoker = checkNotNull(invoker, "invoker");
+      public Builder<A> callerEnclosingType(@Nullable TypeToken<?> callerEnclosingType) {
+         this.callerEnclosingType = Optional.<TypeToken<?>> fromNullable(callerEnclosingType);
          return this;
       }
 
-      /** 
-       * @see GeneratedHttpRequest#getArgs()
-       */
-      public Builder args(Iterable<Object> args) {
-         this.args = Lists.newArrayList(checkNotNull(args, "args"));
-         return this;
-      }
-      
-      /** 
-       * @see GeneratedHttpRequest#getArgs()
-       */
-      public Builder args(@Nullable Object[] args) {
-         return args(Arrays.asList(args != null ? args : new Object[] {}));
-      }
-
-      /** 
-       * @see GeneratedHttpRequest#getArgs()
-       */
-      public Builder arg(@Nullable Object arg) {
-         this.args.add(arg);
-         return this;
-      }
-      
-      /** 
+      /**
        * @see GeneratedHttpRequest#getCaller()
        */
-      public Builder caller(@Nullable ClassInvokerArgs caller) {
+      public Builder<A> caller(@Nullable Invocation caller) {
          this.caller = Optional.fromNullable(caller);
          return this;
       }
 
-      public GeneratedHttpRequest build() {
-         return new GeneratedHttpRequest(method, endpoint, headers.build(), payload, declaring, invoker, args,
-               filters.build(), caller);
+      public GeneratedHttpRequest<A> build() {
+         return new GeneratedHttpRequest<A>(method, endpoint, headers.build(), payload, filters.build(), enclosingType,
+               invocation, callerEnclosingType, caller);
       }
 
-      public Builder fromGeneratedHttpRequest(GeneratedHttpRequest in) {
-         return super.fromHttpRequest(in)
-                     .declaring(in.getDeclaring())
-                     .invoker(in.invoker)
-                     .args(in.getArgs())
-                     .caller(in.getCaller().orNull());
+      public Builder<A> fromGeneratedHttpRequest(GeneratedHttpRequest<A> in) {
+         return super.fromHttpRequest(in).invocation(in.invocation)
+               .callerEnclosingType(in.getCallerEnclosingType().orNull()).caller(in.getCaller().orNull());
       }
 
       @Override
-      protected Builder self() {
+      protected Builder<A> self() {
          return this;
       }
    }
-   
-   private final Class<?> declaring;
-   private final Invokable<?, ?> invoker;
-   private final List<Object> args;
-   private final Optional<ClassInvokerArgs> caller;
+
+   private final TypeToken<A> enclosingType;
+   private final Invocation invocation;
+   private final Optional<TypeToken<?>> callerEnclosingType;
+   private final Optional<Invocation> caller;
 
    protected GeneratedHttpRequest(String method, URI endpoint, Multimap<String, String> headers,
-         @Nullable Payload payload, Class<?> declaring, Invokable<?, ?> invoker,
-         List<Object> args, Iterable<HttpRequestFilter> filters, Optional<ClassInvokerArgs> caller) {
+         @Nullable Payload payload, Iterable<HttpRequestFilter> filters, TypeToken<A> enclosingType,
+         Invocation invocation, Optional<TypeToken<?>> callerEnclosingType, Optional<Invocation> caller) {
       super(method, endpoint, headers, payload, filters);
-      this.declaring = checkNotNull(declaring, "declaring");
-      this.invoker = checkNotNull(invoker, "invoker");
-      // TODO make immutable. ImmutableList.of() doesn't accept nulls
-      this.args = Collections.unmodifiableList(checkNotNull(args, "args"));
+      this.enclosingType = checkNotNull(enclosingType, "enclosingType");
+      this.invocation = checkNotNull(invocation, "invocation");
+      this.callerEnclosingType = checkNotNull(callerEnclosingType, "callerEnclosingType");
       this.caller = checkNotNull(caller, "caller");
    }
 
-   public Class<?> getDeclaring() {
-      return declaring;
+   /**
+    * different than {@link #getDeclaringClass()} when this is a member of a class it was not declared in.
+    */
+   public TypeToken<?> getEnclosingType() {
+      return enclosingType;
    }
 
-   public Invokable<?,?> getInvoker() {
-      return invoker;
-   }
-   
-   public List<Object> getArgs() {
-      return args;
+   /**
+    * what was interpreted to create this request
+    */
+   public Invocation getInvocation() {
+      return invocation;
    }
 
-   public Optional<ClassInvokerArgs> getCaller() {
+   /**
+    * different than {@link #getDeclaringClass()} when {@link #getCaller()} is a member of a class it was not declared
+    * in.
+    */
+   public Optional<TypeToken<?>> getCallerEnclosingType() {
+      return callerEnclosingType;
+   }
+
+   public Optional<Invocation> getCaller() {
       return caller;
    }
 }

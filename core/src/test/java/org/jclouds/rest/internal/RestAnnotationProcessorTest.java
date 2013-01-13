@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import javax.inject.Named;
 import javax.inject.Qualifier;
@@ -86,13 +85,14 @@ import org.jclouds.http.internal.PayloadEnclosingImpl;
 import org.jclouds.http.options.BaseHttpRequestOptions;
 import org.jclouds.http.options.GetOptions;
 import org.jclouds.http.options.HttpRequestOptions;
-import org.jclouds.internal.ClassInvokerArgsAndReturnVal;
 import org.jclouds.io.Payload;
 import org.jclouds.io.PayloadEnclosing;
 import org.jclouds.io.Payloads;
 import org.jclouds.javax.annotation.Nullable;
 import org.jclouds.logging.config.NullLoggingModule;
 import org.jclouds.providers.AnonymousProviderMetadata;
+import org.jclouds.reflect.Invocation;
+import org.jclouds.reflect.InvocationSuccess;
 import org.jclouds.rest.AuthorizationException;
 import org.jclouds.rest.ConfiguresRestClient;
 import org.jclouds.rest.InvocationContext;
@@ -120,7 +120,7 @@ import org.jclouds.rest.annotations.WrapWith;
 import org.jclouds.rest.binders.BindAsHostPrefix;
 import org.jclouds.rest.binders.BindToJsonPayload;
 import org.jclouds.rest.binders.BindToStringPayload;
-import org.jclouds.rest.config.AsyncClientProvider;
+import org.jclouds.rest.config.AsyncHttpApiProvider;
 import org.jclouds.rest.config.RestClientModule;
 import org.jclouds.rest.functions.ImplicitOptionalConverter;
 import org.jclouds.util.Strings2;
@@ -143,6 +143,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 import com.google.common.reflect.Invokable;
+import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.AbstractModule;
@@ -185,14 +186,14 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       @Path("/{path}")
       ListenableFuture<Void> onePath(@PathParam("path") String path);
    }
- 
+
    @Path("/client/{jclouds.api-version}")
    public static interface AsyncCallee2 {
       @GET
       @Path("/{path}/2")
       ListenableFuture<Void> onePath(@PathParam("path") String path);
    }
-   
+
    @Endpoint(Localhost2.class)
    public static interface Caller {
 
@@ -206,7 +207,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
       @Delegate
       public Callee2 getCallee2();
-      
+
       @Delegate
       public Callee getCallee(@EndpointParam URI endpoint);
 
@@ -221,7 +222,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    public static interface Callee {
       void onePath(String path);
    }
-   
+
    public static interface Callee2 {
       void onePath(String path);
    }
@@ -236,7 +237,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
       @Delegate
       public AsyncCallee2 getCallee2();
-      
+
       @Delegate
       public AsyncCallee getCallee(@EndpointParam URI endpoint);
 
@@ -253,7 +254,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Injector child = injectorForCaller(new HttpCommandExecutorService() {
 
          @Override
-         public Future<HttpResponse> submit(HttpCommand command) {
+         public ListenableFuture<HttpResponse> submit(HttpCommand command) {
             assertEquals(command.getCurrentRequest().getRequestLine(),
                   "GET http://localhost:9999/client/1/foo HTTP/1.1");
             return Futures.immediateFuture(HttpResponse.builder().build());
@@ -275,11 +276,16 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    public void testDelegateIsLazyLoadedAndRequestIncludesVersionAndPath() throws InterruptedException,
          ExecutionException {
       Injector child = injectorForCaller(new HttpCommandExecutorService() {
-         int callCounter=0;
+         int callCounter = 0;
+
          @Override
-         public Future<HttpResponse> submit(HttpCommand command) {
-            if (callCounter == 1) assertEquals(command.getCurrentRequest().getRequestLine(), "GET http://localhost:1111/client/1/bar/2 HTTP/1.1");
-            else assertEquals(command.getCurrentRequest().getRequestLine(), "GET http://localhost:1111/client/1/foo HTTP/1.1");
+         public ListenableFuture<HttpResponse> submit(HttpCommand command) {
+            if (callCounter == 1)
+               assertEquals(command.getCurrentRequest().getRequestLine(),
+                     "GET http://localhost:1111/client/1/bar/2 HTTP/1.1");
+            else
+               assertEquals(command.getCurrentRequest().getRequestLine(),
+                     "GET http://localhost:1111/client/1/foo HTTP/1.1");
             callCounter++;
             return Futures.immediateFuture(HttpResponse.builder().build());
          }
@@ -303,7 +309,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Injector child = injectorForCaller(new HttpCommandExecutorService() {
 
          @Override
-         public Future<HttpResponse> submit(HttpCommand command) {
+         public ListenableFuture<HttpResponse> submit(HttpCommand command) {
             assertEquals(command.getCurrentRequest().getRequestLine(), "GET http://howdyboys/client/1/foo HTTP/1.1");
             return Futures.immediateFuture(HttpResponse.builder().build());
          }
@@ -323,13 +329,14 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    }
 
-   public void testAsyncDelegateWithPathParamIsLazyLoadedAndRequestIncludesEndpointVersionAndPath() throws InterruptedException,
-         ExecutionException {
+   public void testAsyncDelegateWithPathParamIsLazyLoadedAndRequestIncludesEndpointVersionAndPath()
+         throws InterruptedException, ExecutionException {
       Injector child = injectorForCaller(new HttpCommandExecutorService() {
 
          @Override
-         public Future<HttpResponse> submit(HttpCommand command) {
-            assertEquals(command.getCurrentRequest().getRequestLine(), "GET http://howdyboys/testing/testing/thepathparam/client/1/foo HTTP/1.1");
+         public ListenableFuture<HttpResponse> submit(HttpCommand command) {
+            assertEquals(command.getCurrentRequest().getRequestLine(),
+                  "GET http://howdyboys/testing/testing/thepathparam/client/1/foo HTTP/1.1");
             return Futures.immediateFuture(HttpResponse.builder().build());
          }
 
@@ -342,7 +349,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
       }
 
-      child.getInstance(AsyncCaller.class).getCalleeWithPath(URI.create("http://howdyboys"), "thepathparam").onePath("foo").get();
+      child.getInstance(AsyncCaller.class).getCalleeWithPath(URI.create("http://howdyboys"), "thepathparam")
+            .onePath("foo").get();
 
       assertEquals(child.getInstance(AsyncCaller.class).getURI(), URI.create("http://localhost:1111"));
    }
@@ -352,7 +360,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Injector child = injectorForCaller(new HttpCommandExecutorService() {
 
          @Override
-         public Future<HttpResponse> submit(HttpCommand command) {
+         public ListenableFuture<HttpResponse> submit(HttpCommand command) {
             assertEquals(command.getCurrentRequest().getRequestLine(), "GET http://howdyboys/client/1/foo HTTP/1.1");
             return Futures.immediateFuture(HttpResponse.builder().build());
          }
@@ -377,7 +385,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Injector child = injectorForCaller(new HttpCommandExecutorService() {
 
          @Override
-         public Future<HttpResponse> submit(HttpCommand command) {
+         public ListenableFuture<HttpResponse> submit(HttpCommand command) {
             assertEquals(command.getCurrentRequest().getRequestLine(), "GET http://howdyboys/client/1/foo HTTP/1.1");
             return Futures.immediateFuture(HttpResponse.builder().build());
          }
@@ -389,7 +397,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
             bind(ImplicitOptionalConverter.class).toInstance(new ImplicitOptionalConverter() {
 
                @Override
-               public Optional<Object> apply(ClassInvokerArgsAndReturnVal input) {
+               public Optional<Object> apply(InvocationSuccess input) {
                   return Optional.absent();
                }
 
@@ -416,7 +424,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Injector child = injectorForCaller(new HttpCommandExecutorService() {
 
          @Override
-         public Future<HttpResponse> submit(HttpCommand command) {
+         public ListenableFuture<HttpResponse> submit(HttpCommand command) {
             assertEquals(command.getCurrentRequest().getRequestLine(), "GET http://howdyboys/client/1/foo HTTP/1.1");
             return Futures.immediateFuture(HttpResponse.builder().build());
          }
@@ -467,19 +475,19 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
       @FOO
       @Path("/")
-      @QueryParams(keys = { "foo", "fooble"}, values = { "bar", "baz"})
+      @QueryParams(keys = { "foo", "fooble" }, values = { "bar", "baz" })
       public void foo2() {
       }
 
       @FOO
       @Path("/")
-      @QueryParams(keys = { "foo", "fooble"}, values = { "bar", "baz"})
+      @QueryParams(keys = { "foo", "fooble" }, values = { "bar", "baz" })
       public void foo3(@QueryParam("robbie") String robbie) {
       }
-      
+
       @FOO
       @Path("/")
-      @QueryParams(keys = { "foo", "fooble"}, values = { "bar", "baz"})
+      @QueryParams(keys = { "foo", "fooble" }, values = { "bar", "baz" })
       public void foo3Nullable(@Nullable @QueryParam("robbie") String robbie) {
       }
 
@@ -491,7 +499,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testQuery() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("foo"));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method, ImmutableList.of());
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
       assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17&x-ms-rubbish=bin");
@@ -500,7 +508,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testQuery2() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("foo2"));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method, ImmutableList.of());
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
       assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17&foo=bar&fooble=baz");
@@ -509,74 +517,77 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testQuery3() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("foo3", String.class));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of("wonder"));
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method,
+            ImmutableList.<Object> of("wonder"));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
       assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17&foo=bar&fooble=baz&robbie=wonder");
       assertEquals(request.getMethod(), "FOO");
    }
-   
-   @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "param\\{robbie\\} for method TestQuery.foo3")
+
+   @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "param\\{robbie\\} for invocation TestQuery.foo3")
    public void testNiceNPEQueryParam() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("foo3", String.class));
-      factory(TestPath.class).createRequest(method, Lists.<Object> newArrayList((String) null));
+      processor(TestQuery.class).createRequest(method, Lists.<Object> newArrayList((String) null));
    }
 
    public void testNoNPEOnQueryParamWithNullable() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("foo3Nullable", String.class));
-      HttpRequest request = factory(TestPath.class).createRequest(method, Lists.<Object> newArrayList((String) null));
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method,
+            Lists.<Object> newArrayList((String) null));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
-      assertEquals(request.getEndpoint().getQuery(), "foo=bar&fooble=baz");
+      assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17&foo=bar&fooble=baz");
       assertEquals(request.getMethod(), "FOO");
    }
-   
+
    public void testQueryParamIterableOneString() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("queryParamIterable", Iterable.class));
-      Set<String> bars = ImmutableSortedSet.<String> of("1"); 
-      HttpRequest request = factory(TestPath.class).createRequest(method, ImmutableList.<Object> of(bars));
+      Set<String> bars = ImmutableSortedSet.<String> of("1");
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method, ImmutableList.<Object> of(bars));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
-      assertEquals(request.getEndpoint().getQuery(), "foo=1");
+      assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17&foo=1");
       assertEquals(request.getMethod(), "FOO");
    }
 
    public void testQueryParamIterableString() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("queryParamIterable", Iterable.class));
-      Set<String> bars = ImmutableSortedSet.<String> of("1", "2", "3"); 
-      HttpRequest request = factory(TestPath.class).createRequest(method, ImmutableList.<Object> of(bars));
+      Set<String> bars = ImmutableSortedSet.<String> of("1", "2", "3");
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method, ImmutableList.<Object> of(bars));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
-      assertEquals(request.getEndpoint().getQuery(), "foo=1&foo=2&foo=3");
+      assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17&foo=1&foo=2&foo=3");
       assertEquals(request.getMethod(), "FOO");
    }
 
    public void testQueryParamIterableInteger() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("queryParamIterable", Iterable.class));
-      Set<Integer> bars = ImmutableSortedSet.<Integer> of(1, 2, 3); 
-      HttpRequest request = factory(TestPath.class).createRequest(method, ImmutableList.<Object> of(bars));
+      Set<Integer> bars = ImmutableSortedSet.<Integer> of(1, 2, 3);
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method, ImmutableList.<Object> of(bars));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
-      assertEquals(request.getEndpoint().getQuery(), "foo=1&foo=2&foo=3");
+      assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17&foo=1&foo=2&foo=3");
       assertEquals(request.getMethod(), "FOO");
    }
 
    public void testQueryParamIterableEmpty() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("queryParamIterable", Iterable.class));
-      Set<String> bars = Collections.emptySet(); 
-      HttpRequest request = factory(TestPath.class).createRequest(method, ImmutableList.<Object> of(bars));
+      Set<String> bars = Collections.emptySet();
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method, ImmutableList.<Object> of(bars));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
-      assertEquals(request.getEndpoint().getQuery(), null);
+      assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17");
       assertEquals(request.getMethod(), "FOO");
    }
 
    public void testQueryParamIterableNull() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQuery.class.getMethod("queryParamIterable", Iterable.class));
-      HttpRequest request = factory(TestPath.class).createRequest(method, Lists.<Object> newArrayList((String) null));
+      GeneratedHttpRequest request = processor(TestQuery.class).createRequest(method,
+            Lists.<Object> newArrayList((String) null));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/");
-      assertEquals(request.getEndpoint().getQuery(), null);
+      assertEquals(request.getEndpoint().getQuery(), "x-ms-version=2009-07-17");
       assertEquals(request.getMethod(), "FOO");
    }
 
@@ -601,70 +612,90 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testHttpRequestOptionsNoPayloadParam() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("post"));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.of());
-      assertRequestLineEquals(request, "POST http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestPayloadParamVarargs.class).createRequest(method, ImmutableList.of());
+      assertRequestLineEquals(request, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "", "application/octet-stream", false);
    }
-   
+
    private class TestHttpRequestOptions extends BaseHttpRequestOptions {
-      TestHttpRequestOptions payload(String payload) { this.payload = payload; return this; }
-      TestHttpRequestOptions headerParams(Multimap<String, String> headers) { this.headers.putAll(headers); return this; }
-      TestHttpRequestOptions queryParams(Multimap<String, String> params) { this.queryParameters.putAll(params); return this; }
+      TestHttpRequestOptions payload(String payload) {
+         this.payload = payload;
+         return this;
+      }
+
+      TestHttpRequestOptions headerParams(Multimap<String, String> headers) {
+         this.headers.putAll(headers);
+         return this;
+      }
+
+      TestHttpRequestOptions queryParams(Multimap<String, String> params) {
+         this.queryParameters.putAll(params);
+         return this;
+      }
    }
 
    public void testHttpRequestOptionsPayloadParam() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("post", Payload.class));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(Payloads.newStringPayload("foo")));
-      assertRequestLineEquals(request, "POST http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestPayloadParamVarargs.class).createRequest(method,
+            ImmutableList.<Object> of(Payloads.newStringPayload("foo")));
+      assertRequestLineEquals(request, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "foo", "application/octet-stream", false);
    }
-   
+
    public void testHttpRequestWithOnlyContentType() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("post", HttpRequestOptions.class));
-      HttpRequest request = factory(TestPayloadParamVarargs.class).createRequest(method, ImmutableList.<Object> of(new TestHttpRequestOptions().payload("fooya")));
+      Invokable<?, ?> method = Invokable
+            .from(TestPayloadParamVarargs.class.getMethod("post", HttpRequestOptions.class));
+      GeneratedHttpRequest request = processor(TestPayloadParamVarargs.class).createRequest(method,
+            ImmutableList.<Object> of(new TestHttpRequestOptions().payload("fooya")));
       assertRequestLineEquals(request, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "fooya", "application/unknown", false);
    }
 
    public void testHeaderAndQueryVarargs() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("varargs", HttpRequestOptions[].class));
-      HttpRequest request = factory(TestPayloadParamVarargs.class).createRequest(method, ImmutableList.<Object> of(
-            new TestHttpRequestOptions().payload("fooya"),
-            new TestHttpRequestOptions().headerParams(ImmutableMultimap.of("X-header-1", "fooya")),
-            new TestHttpRequestOptions().queryParams(ImmutableMultimap.of("key", "value"))));
+      Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("varargs",
+            HttpRequestOptions[].class));
+      GeneratedHttpRequest request = processor(TestPayloadParamVarargs.class).createRequest(
+            method,
+            ImmutableList.<Object> of(new TestHttpRequestOptions().payload("fooya"),
+                  new TestHttpRequestOptions().headerParams(ImmutableMultimap.of("X-header-1", "fooya")),
+                  new TestHttpRequestOptions().queryParams(ImmutableMultimap.of("key", "value"))));
       assertRequestLineEquals(request, "POST http://localhost:9999?key=value HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "X-header-1: fooya\n");
       assertPayloadEquals(request, "fooya", "application/unknown", false);
    }
 
    public void testHeaderAndQueryVarargsPlusReq() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("varargsWithReq", String.class, HttpRequestOptions[].class));
-      HttpRequest request = factory(TestPayloadParamVarargs.class).createRequest(method, ImmutableList.<Object> of("required param",
-            new TestHttpRequestOptions().payload("fooya"),
-            new TestHttpRequestOptions().headerParams(ImmutableMultimap.of("X-header-1", "fooya")),
-            new TestHttpRequestOptions().queryParams(ImmutableMultimap.of("key", "value"))));
+      Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("varargsWithReq", String.class,
+            HttpRequestOptions[].class));
+      GeneratedHttpRequest request = processor(TestPayloadParamVarargs.class).createRequest(
+            method,
+            ImmutableList.<Object> of("required param", new TestHttpRequestOptions().payload("fooya"),
+                  new TestHttpRequestOptions().headerParams(ImmutableMultimap.of("X-header-1", "fooya")),
+                  new TestHttpRequestOptions().queryParams(ImmutableMultimap.of("key", "value"))));
       assertRequestLineEquals(request, "POST http://localhost:9999?key=value HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "X-header-1: fooya\n");
       assertPayloadEquals(request, "fooya", "application/unknown", false);
    }
 
    public void testDuplicateHeaderAndQueryVarargs() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("varargs", HttpRequestOptions[].class));
-      HttpRequest request = factory(TestPayloadParamVarargs.class).createRequest(method, ImmutableList.<Object> of(
-            new TestHttpRequestOptions().queryParams(ImmutableMultimap.of("key", "value")),
-            new TestHttpRequestOptions().payload("fooya"),
-            new TestHttpRequestOptions().headerParams(ImmutableMultimap.of("X-header-1", "fooya")),
-            new TestHttpRequestOptions().queryParams(ImmutableMultimap.of("key", "anothervalue")),
-            new TestHttpRequestOptions().headerParams(ImmutableMultimap.of("X-header-1", "fooya again!")),
-            new TestHttpRequestOptions().payload("last_payload_wins!")));
+      Invokable<?, ?> method = Invokable.from(TestPayloadParamVarargs.class.getMethod("varargs",
+            HttpRequestOptions[].class));
+      GeneratedHttpRequest request = processor(TestPayloadParamVarargs.class).createRequest(
+            method,
+            ImmutableList.<Object> of(new TestHttpRequestOptions().queryParams(ImmutableMultimap.of("key", "value")),
+                  new TestHttpRequestOptions().payload("fooya"),
+                  new TestHttpRequestOptions().headerParams(ImmutableMultimap.of("X-header-1", "fooya")),
+                  new TestHttpRequestOptions().queryParams(ImmutableMultimap.of("key", "anothervalue")),
+                  new TestHttpRequestOptions().headerParams(ImmutableMultimap.of("X-header-1", "fooya again!")),
+                  new TestHttpRequestOptions().payload("last_payload_wins!")));
       assertRequestLineEquals(request, "POST http://localhost:9999?key=value&key=anothervalue HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "X-header-1: fooya\nX-header-1: fooya again!\n");
       assertPayloadEquals(request, "last_payload_wins!", "application/unknown", false);
    }
-   
+
    public class TestCustomMethod {
       @FOO
       public void foo() {
@@ -673,7 +704,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCustomMethod() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestCustomMethod.class.getMethod("foo"));
-      HttpRequest request = factory(TestCustomMethod.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestCustomMethod.class).createRequest(method, ImmutableList.of());
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "");
       assertEquals(request.getMethod(), "FOO");
@@ -691,7 +722,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testOverriddenMethod() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestOverridden.class.getMethod("foo"));
-      HttpRequest request = factory(TestOverridden.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestOverridden.class).createRequest(method, ImmutableList.of());
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "");
       assertEquals(request.getMethod(), "POST");
@@ -711,7 +742,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testOverriddenEndpointMethod() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestOverriddenEndpoint.class.getMethod("foo"));
-      HttpRequest request = factory(TestOverriddenEndpoint.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestOverriddenEndpoint.class).createRequest(method, ImmutableList.of());
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPort(), 1111);
       assertEquals(request.getEndpoint().getPath(), "");
@@ -720,7 +751,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testOverriddenEndpointParameter() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestOverriddenEndpoint.class.getMethod("foo", URI.class));
-      HttpRequest request = factory(TestOverriddenEndpoint.class).createRequest(method,
+      GeneratedHttpRequest request = processor(TestOverriddenEndpoint.class).createRequest(method,
             ImmutableList.<Object> of(URI.create("http://wowsa:8001")));
       assertEquals(request.getEndpoint().getHost(), "wowsa");
       assertEquals(request.getEndpoint().getPort(), 8001);
@@ -763,7 +794,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePostRequest() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("post", String.class));
-      HttpRequest request = factory(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -772,7 +803,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePostRequestNullOk1() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("post", String.class));
-      HttpRequest request = factory(TestPost.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPost.class).createRequest(method, ImmutableList.of());
 
       assertRequestLineEquals(request, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -781,7 +812,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePostRequestNullOk2() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("post", String.class));
-      HttpRequest request = factory(TestPost.class).createRequest(method, Lists.<Object> newArrayList((String) null));
+      GeneratedHttpRequest request = processor(TestPost.class).createRequest(method,
+            Lists.<Object> newArrayList((String) null));
 
       assertRequestLineEquals(request, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -791,7 +823,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    public void testCreatePostRequestNullNotOk1() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("postNonnull", String.class));
       try {
-         HttpRequest request = factory(TestPost.class).createRequest(method, ImmutableList.of());
+         GeneratedHttpRequest request = processor(TestPost.class).createRequest(method, ImmutableList.of());
          Assert.fail("call should have failed with illegal null parameter, not permitted " + request + " to be created");
       } catch (NullPointerException e) {
          Assert.assertTrue(e.toString().indexOf("postNonnull parameter 1") >= 0,
@@ -802,12 +834,12 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "postNonnull parameter 1")
    public void testCreatePostRequestNullNotOk2() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("postNonnull", String.class));
-      factory(TestPost.class).createRequest(method, Lists.<Object> newArrayList((String) null));
+      processor(TestPost.class).createRequest(method, Lists.<Object> newArrayList((String) null));
    }
 
    public void testCreatePostJsonRequest() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("postAsJson", String.class));
-      HttpRequest request = factory(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -816,25 +848,26 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePostWithPathRequest() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("postWithPath", String.class, MapBinder.class));
-      HttpRequest request = factory(TestPost.class).createRequest(method, ImmutableList.<Object> of("data", new org.jclouds.rest.MapBinder() {
-         @Override
-         public <R extends HttpRequest> R bindToRequest(R request, Map<String, Object> postParams) {
-            request.setPayload((String) postParams.get("fooble"));
-            return request;
-         }
+      GeneratedHttpRequest request = processor(TestPost.class).createRequest(method,
+            ImmutableList.<Object> of("data", new org.jclouds.rest.MapBinder() {
+               @Override
+               public <R extends HttpRequest> R bindToRequest(R request, Map<String, Object> postParams) {
+                  request.setPayload((String) postParams.get("fooble"));
+                  return request;
+               }
 
-         @Override
-         public <R extends HttpRequest> R bindToRequest(R request, Object toBind) {
-            throw new RuntimeException("this shouldn't be used in POST");
-         }
-      }));
+               @Override
+               public <R extends HttpRequest> R bindToRequest(R request, Object toBind) {
+                  throw new RuntimeException("this shouldn't be used in POST");
+               }
+            }));
       assertRequestLineEquals(request, "POST http://localhost:9999/data HTTP/1.1");
       assertPayloadEquals(request, "data", "application/unknown", false);
    }
 
    public void testCreatePostWithMethodBinder() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("postWithMethodBinder", String.class));
-      HttpRequest request = factory(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "POST http://localhost:9999/data HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -842,8 +875,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    }
 
    public void testCreatePostWithMethodBinderAndDefaults() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("postWithMethodBinderAndDefaults", String.class));
-      HttpRequest request = factory(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
+      Invokable<?, ?> method = Invokable
+            .from(TestPost.class.getMethod("postWithMethodBinderAndDefaults", String.class));
+      GeneratedHttpRequest request = processor(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "POST http://localhost:9999/data HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -852,7 +886,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePostWithPayload() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPost.class.getMethod("testPayload", String.class));
-      HttpRequest request = factory(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPost.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "POST http://localhost:9999/data HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -881,8 +915,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testMultipartWithStringPart() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withStringPart", String.class));
-      GeneratedHttpRequest httpRequest = factory(TestMultipartForm.class).createRequest(method,ImmutableList.<Object> of(
-            "foobledata"));
+      GeneratedHttpRequest httpRequest = processor(TestMultipartForm.class).createRequest(method,
+            ImmutableList.<Object> of("foobledata"));
       assertRequestLineEquals(httpRequest, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(httpRequest, "");
       assertPayloadEquals(httpRequest,//
@@ -896,12 +930,13 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "fooble")
    public void testMultipartWithStringPartNullNotOkay() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withStringPart", String.class));
-      factory(TestMultipartForm.class).createRequest(method, Lists.<Object> newArrayList((String) null));
+      processor(TestMultipartForm.class).createRequest(method, Lists.<Object> newArrayList((String) null));
    }
 
    public void testMultipartWithParamStringPart() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamStringPart", String.class, String.class));
-      GeneratedHttpRequest httpRequest = factory(TestMultipartForm.class).createRequest(method,
+      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamStringPart", String.class,
+            String.class));
+      GeneratedHttpRequest httpRequest = processor(TestMultipartForm.class).createRequest(method,
             ImmutableList.<Object> of("name", "foobledata"));
       assertRequestLineEquals(httpRequest, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(httpRequest, "");
@@ -917,19 +952,21 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
                   "----JCLOUDS----\r\n", "multipart/form-data; boundary=--JCLOUDS--", false);
    }
 
-   @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "param\\{name\\} for method TestMultipartForm.withParamStringPart")
+   @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "param\\{name\\} for invocation TestMultipartForm.withParamStringPart")
    public void testMultipartWithParamStringPartNullNotOk() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamStringPart", String.class, String.class));
-      factory(TestMultipartForm.class).createRequest(method, Lists.<Object> newArrayList(null, "foobledata"));
+      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamStringPart", String.class,
+            String.class));
+      processor(TestMultipartForm.class).createRequest(method, Lists.<Object> newArrayList(null, "foobledata"));
    }
 
    public void testMultipartWithParamFilePart() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamFilePart", String.class, File.class));
+      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamFilePart", String.class,
+            File.class));
       File file = File.createTempFile("foo", "bar");
       Files.append("foobledata", file, UTF_8);
       file.deleteOnExit();
 
-      GeneratedHttpRequest httpRequest = factory(TestMultipartForm.class).createRequest(method,
+      GeneratedHttpRequest httpRequest = processor(TestMultipartForm.class).createRequest(method,
             ImmutableList.<Object> of("name", file));
       assertRequestLineEquals(httpRequest, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(httpRequest, "");
@@ -946,8 +983,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    }
 
    public void testMultipartWithParamByteArrayPart() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamByteArrayBinaryPart", String.class, byte[].class));
-      GeneratedHttpRequest httpRequest = factory(TestMultipartForm.class).createRequest(method,
+      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamByteArrayBinaryPart",
+            String.class, byte[].class));
+      GeneratedHttpRequest httpRequest = processor(TestMultipartForm.class).createRequest(method,
             ImmutableList.<Object> of("name", "goo".getBytes()));
       assertRequestLineEquals(httpRequest, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(httpRequest, "");
@@ -965,12 +1003,13 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    };
 
    public void testMultipartWithParamFileBinaryPart() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamFileBinaryPart", String.class, File.class));
+      Invokable<?, ?> method = Invokable.from(TestMultipartForm.class.getMethod("withParamFileBinaryPart",
+            String.class, File.class));
       File file = File.createTempFile("foo", "bar");
       Files.write(new byte[] { 17, 26, 39, 40, 50 }, file);
       file.deleteOnExit();
 
-      GeneratedHttpRequest httpRequest = factory(TestMultipartForm.class).createRequest(method,
+      GeneratedHttpRequest httpRequest = processor(TestMultipartForm.class).createRequest(method,
             ImmutableList.<Object> of("name", file));
       assertRequestLineEquals(httpRequest, "POST http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(httpRequest, "");
@@ -1100,7 +1139,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testAlternateHttpMethod() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("rowdy", String.class));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "ROWDY http://localhost:9999/strings/data HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -1109,7 +1148,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testAlternateHttpMethodSameArity() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("rowdy", int.class));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "ROWDY http://localhost:9999/ints/data HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -1118,7 +1157,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePutWithMethodBinder() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("putWithMethodBinder", String.class));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "PUT http://localhost:9999/data HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -1127,7 +1166,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePutWithMethodProduces() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("putWithMethodBinderProduces", String.class));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "PUT http://localhost:9999/data HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -1137,34 +1176,31 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @SuppressWarnings("unchecked")
    public void testCreatePutWithMethodConsumes() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("putWithMethodBinderConsumes", String.class));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.<Object> of("data"));
 
       assertRequestLineEquals(request, "PUT http://localhost:9999/data HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "Accept: application/json\n");
       assertPayloadEquals(request, "{\"fooble\":\"data\"}", "application/json", false);
 
       assertResponseParserClassEquals(method, request, ParseJson.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, View> parser = (Function<HttpResponse, View>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()).foo, "bar");
+      assertEquals(
+            View.class.cast(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build())).foo,
+            "bar");
 
    }
 
    @SuppressWarnings("unchecked")
    public void testGeneric1() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testGeneric"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, ParseJson.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()),
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()),
             ImmutableMap.of("foo", "bar"));
 
    }
@@ -1172,15 +1208,13 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @SuppressWarnings("unchecked")
    public void testGeneric2() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testGeneric2"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, ParseJson.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()),
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()),
             ImmutableMap.of("foo", "bar"));
 
    }
@@ -1188,15 +1222,13 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @SuppressWarnings("unchecked")
    public void testGeneric3() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testGeneric3"));
-      HttpRequest request = factory(TestPut.class).createRequest(method ,ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, ParseJson.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()),
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()),
             ImmutableMap.of("foo", "bar"));
 
    }
@@ -1204,111 +1236,98 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @SuppressWarnings("unchecked")
    public void testUnwrap1() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testUnwrap"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, UnwrapOnlyJsonValue.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()), "bar");
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()), "bar");
 
    }
 
    @SuppressWarnings("unchecked")
    public void testUnwrapValueNamed() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testUnwrapValueNamed"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, ParseFirstJsonValueNamed.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()), "bar");
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()), "bar");
 
    }
 
    public void testWrapWith() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testWrapWith", String.class));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.<Object> of("bar"));
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.<Object> of("bar"));
       assertPayloadEquals(request, "{\"foo\":\"bar\"}", "application/json", false);
    }
 
    @SuppressWarnings("unchecked")
    public void testUnwrap2() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testUnwrap2"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, UnwrapOnlyJsonValue.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()), "bar");
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{ foo:\"bar\"}").build()), "bar");
 
    }
 
    @SuppressWarnings("unchecked")
    public void testUnwrap3() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testUnwrap3"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, UnwrapOnlyJsonValue.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{\"runit\":[\"0.7.0\",\"0.7.1\"]}").build()),
-            ImmutableSet.of("0.7.0", "0.7.1"));
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok")
+                  .payload("{\"runit\":[\"0.7.0\",\"0.7.1\"]}").build()), ImmutableSet.of("0.7.0", "0.7.1"));
    }
 
    @SuppressWarnings("unchecked")
    public void testUnwrap4() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("testUnwrap4"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, UnwrapOnlyJsonValue.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok").payload("{\"runit\":[\"0.7.0\",\"0.7.1\"]}").build()),
-            ImmutableSet.of("0.7.0", "0.7.1"));
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok")
+                  .payload("{\"runit\":[\"0.7.0\",\"0.7.1\"]}").build()), ImmutableSet.of("0.7.0", "0.7.1"));
    }
 
    @SuppressWarnings("unchecked")
    public void selectLong() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("selectLong"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
 
       assertResponseParserClassEquals(method, request, ParseFirstJsonValueNamed.class);
-      // now test that it works!
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok")
-            .payload("{ \"destroyvirtualmachineresponse\" : {\"jobid\":4} }").build()), Long.valueOf(4));
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok")
+                  .payload("{ \"destroyvirtualmachineresponse\" : {\"jobid\":4} }").build()), Long.valueOf(4));
    }
 
    @SuppressWarnings("unchecked")
    public void selectLongAddOne() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPut.class.getMethod("selectLongAddOne"));
-      HttpRequest request = factory(TestPut.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestPut.class).createRequest(method, ImmutableList.of());
+      Function<HttpResponse, ?> parser = transformer(TestPut.class).apply(request);
 
-      Function<HttpResponse, Map<String, String>> parser = (Function<HttpResponse, Map<String, String>>) AsyncRestClientProxy
-            .createResponseParser(parserFactory, injector, method, request);
-
-      assertEquals(parser.apply(HttpResponse.builder().statusCode(200).message("ok")
-            .payload("{ \"destroyvirtualmachineresponse\" : {\"jobid\":4} }").build()), Long.valueOf(5));
+      assertEquals(
+            parser.apply(HttpResponse.builder().statusCode(200).message("ok")
+                  .payload("{ \"destroyvirtualmachineresponse\" : {\"jobid\":4} }").build()), Long.valueOf(5));
    }
-   
+
    static class TestRequestFilter1 implements HttpRequestFilter {
       public HttpRequest filter(HttpRequest request) throws HttpException {
          return request;
@@ -1340,7 +1359,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testRequestFilter() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestRequestFilter.class.getMethod("get"));
-      HttpRequest request = factory(TestRequestFilter.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestRequestFilter.class).createRequest(method, ImmutableList.of());
       assertEquals(request.getFilters().size(), 2);
       assertEquals(request.getFilters().get(0).getClass(), TestRequestFilter1.class);
       assertEquals(request.getFilters().get(1).getClass(), TestRequestFilter2.class);
@@ -1348,23 +1367,23 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testRequestFilterOverride() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestRequestFilter.class.getMethod("getOverride"));
-      HttpRequest request = factory(TestRequestFilter.class).createRequest(method, ImmutableList.of());
+      GeneratedHttpRequest request = processor(TestRequestFilter.class).createRequest(method, ImmutableList.of());
       assertEquals(request.getFilters().size(), 1);
       assertEquals(request.getFilters().get(0).getClass(), TestRequestFilter2.class);
    }
 
    public void testRequestFilterOverrideOnRequest() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestRequestFilter.class.getMethod("getOverride", HttpRequest.class));
-      HttpRequest request = factory(TestRequestFilter.class).createRequest(
-            method, ImmutableList.<Object> of(
-            HttpRequest.builder().method("GET").endpoint("http://localhost")
+      GeneratedHttpRequest request = processor(TestRequestFilter.class).createRequest(
+            method,
+            ImmutableList.<Object> of(HttpRequest.builder().method("GET").endpoint("http://localhost")
                   .addHeader("foo", "bar").build()));
       assertEquals(request.getFilters().size(), 1);
       assertEquals(request.getHeaders().size(), 1);
       assertEquals(request.getFilters().get(0).getClass(), TestRequestFilter2.class);
    }
 
-      public class TestEncoding {
+   public class TestEncoding {
       @GET
       @Path("/{path1}/{path2}")
       public void twoPaths(@PathParam("path1") String path, @PathParam("path2") String path2) {
@@ -1374,7 +1393,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testSkipEncoding() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestEncoding.class.getMethod("twoPaths", String.class, String.class));
-      HttpRequest request = factory(TestEncoding.class).createRequest(method, ImmutableList.<Object> of("1", "localhost"));
+      GeneratedHttpRequest request = processor(TestEncoding.class).createRequest(method,
+            ImmutableList.<Object> of("1", "localhost"));
       assertEquals(request.getEndpoint().getPath(), "/1/localhost");
       assertEquals(request.getMethod(), HttpMethod.GET);
       assertEquals(request.getHeaders().size(), 0);
@@ -1383,13 +1403,14 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testEncodingPath() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestEncoding.class.getMethod("twoPaths", String.class, String.class));
-      HttpRequest request = factory(TestEncoding.class).createRequest(method, ImmutableList.<Object> of("/", "localhost" ));
+      GeneratedHttpRequest request = processor(TestEncoding.class).createRequest(method,
+            ImmutableList.<Object> of("/", "localhost"));
       assertEquals(request.getEndpoint().getPath(), "///localhost");
       assertEquals(request.getMethod(), HttpMethod.GET);
       assertEquals(request.getHeaders().size(), 0);
    }
 
-      @Path("/v1/{identity}")
+   @Path("/v1/{identity}")
    public interface TestConstantPathParam {
       @Named("testidentity")
       @PathParam("identity")
@@ -1402,8 +1423,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    @Test(enabled = false)
    public void testConstantPathParam() throws SecurityException, NoSuchMethodException, IOException {
-      Invokable<?, ?> method = Invokable.from(TestConstantPathParam.class.getMethod("twoPaths", String.class, String.class));
-      HttpRequest request = factory(TestConstantPathParam.class).createRequest(method,
+      Invokable<?, ?> method = Invokable.from(TestConstantPathParam.class.getMethod("twoPaths", String.class,
+            String.class));
+      GeneratedHttpRequest request = processor(TestConstantPathParam.class).createRequest(method,
             ImmutableList.<Object> of("1", "localhost"));
       assertRequestLineEquals(request, "GET http://localhost:9999/v1/ralphie/1/localhost HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -1415,7 +1437,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       @Path("/{path}")
       public void onePath(@PathParam("path") String path) {
       }
-      
+
       @GET
       @Path("/{path}")
       public void onePathNullable(@Nullable @PathParam("path") String path) {
@@ -1446,17 +1468,18 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       public void oneFormParamExtractor(@FormParam("one") @ParamParser(FirstCharacter.class) String one) {
       }
    }
-   
-   @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "param\\{path\\} for method TestPath.onePath")
+
+   @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "param\\{path\\} for invocation TestPath.onePath")
    public void testNiceNPEPathParam() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPath.class.getMethod("onePath", String.class));
-      factory(TestPath.class).createRequest(method, Lists.<Object> newArrayList((String) null));
+      processor(TestPath.class).createRequest(method, Lists.<Object> newArrayList((String) null));
    }
-   
+
    @Test
    public void testPathParamExtractor() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPath.class.getMethod("onePathParamExtractor", String.class));
-      HttpRequest request = factory(TestPath.class).createRequest(method, ImmutableList.<Object> of("localhost"));
+      GeneratedHttpRequest request = processor(TestPath.class).createRequest(method,
+            ImmutableList.<Object> of("localhost"));
       assertRequestLineEquals(request, "GET http://localhost:9999/l HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, null, null, false);
@@ -1465,25 +1488,27 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testQueryParamExtractor() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPath.class.getMethod("oneQueryParamExtractor", String.class));
-      HttpRequest request = factory(TestPath.class).createRequest(method, ImmutableList.<Object> of("localhost"));
+      GeneratedHttpRequest request = processor(TestPath.class).createRequest(method,
+            ImmutableList.<Object> of("localhost"));
       assertRequestLineEquals(request, "GET http://localhost:9999/?one=l HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, null, null, false);
    }
-   
+
    @Test
    public void testFormParamExtractor() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPath.class.getMethod("oneFormParamExtractor", String.class));
-      HttpRequest request = factory(TestPath.class).createRequest(method, ImmutableList.<Object> of("localhost"));
+      GeneratedHttpRequest request = processor(TestPath.class).createRequest(method,
+            ImmutableList.<Object> of("localhost"));
       assertRequestLineEquals(request, "POST http://localhost:9999/ HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "one=l", "application/x-www-form-urlencoded", false);
    }
-   
-   @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "param\\{one\\} for method TestPath.oneFormParamExtractor")
+
+   @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "param\\{one\\} for invocation TestPath.oneFormParamExtractor")
    public void testNiceNPEFormParam() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestPath.class.getMethod("oneFormParamExtractor", String.class));
-      factory(TestPath.class).createRequest(method, Lists.<Object> newArrayList((String) null));
+      processor(TestPath.class).createRequest(method, Lists.<Object> newArrayList((String) null));
    }
 
    static class FirstCharacter implements Function<Object, String> {
@@ -1507,7 +1532,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
       @GET
       @Path("/")
-      @Headers(keys = { "slash", "hyphen"}, values = { "/{bucket}", "-{bucket}"})
+      @Headers(keys = { "slash", "hyphen" }, values = { "/{bucket}", "-{bucket}" })
       public void twoHeader(@PathParam("bucket") String path) {
       }
 
@@ -1526,9 +1551,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    @Test
    public void testBuildTwoHeader() throws SecurityException, NoSuchMethodException {
-         Invokable<?, ?> method = Invokable.from(TestHeader.class.getMethod("twoHeader", String.class));
-      Multimap<String, String> headers = factory(TestHeader.class).createRequest(method, ImmutableList.<Object> of("robot"))
-            .getHeaders();
+      Invokable<?, ?> method = Invokable.from(TestHeader.class.getMethod("twoHeader", String.class));
+      Multimap<String, String> headers = processor(TestHeader.class).createRequest(method,
+            ImmutableList.<Object> of("robot")).getHeaders();
       assertEquals(headers.size(), 2);
       assertEquals(headers.get("slash"), ImmutableList.of("/robot"));
       assertEquals(headers.get("hyphen"), ImmutableList.of("-robot"));
@@ -1545,7 +1570,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testBuildOneClassHeader() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestClassHeader.class.getMethod("oneHeader", String.class));
-      Multimap<String, String> headers = factory(TestClassHeader.class).createRequest(method,
+      Multimap<String, String> headers = processor(TestClassHeader.class).createRequest(method,
             ImmutableList.<Object> of("robot")).getHeaders();
       assertEquals(headers.size(), 1);
       assertEquals(headers.get("x-amz-copy-source"), ImmutableList.of("/robot"));
@@ -1554,8 +1579,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testBuildOneHeader() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestHeader.class.getMethod("oneHeader", String.class));
-      Multimap<String, String> headers = factory(TestHeader.class).createRequest(method, ImmutableList.<Object> of("robot"))
-            .getHeaders();
+      Multimap<String, String> headers = processor(TestHeader.class).createRequest(method,
+            ImmutableList.<Object> of("robot")).getHeaders();
       assertEquals(headers.size(), 1);
       assertEquals(headers.get("x-amz-copy-source"), ImmutableList.of("/robot"));
    }
@@ -1563,7 +1588,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testBuildTwoHeaders() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestHeader.class.getMethod("twoHeaders", String.class, String.class));
-      Multimap<String, String> headers = factory(TestHeader.class).createRequest(method,
+      Multimap<String, String> headers = processor(TestHeader.class).createRequest(method,
             ImmutableList.<Object> of("robot", "eggs")).getHeaders();
       assertEquals(headers.size(), 1);
       assertEquals(headers.get("x-amz-copy-source"), ImmutableList.of("/robot/eggs"));
@@ -1571,8 +1596,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    @Test
    public void testBuildTwoHeadersOutOfOrder() throws SecurityException, NoSuchMethodException {
-      Invokable<?, ?> method = Invokable.from(TestHeader.class.getMethod("twoHeadersOutOfOrder", String.class, String.class));
-      Multimap<String, String> headers = factory(TestHeader.class).createRequest(method,
+      Invokable<?, ?> method = Invokable.from(TestHeader.class.getMethod("twoHeadersOutOfOrder", String.class,
+            String.class));
+      Multimap<String, String> headers = processor(TestHeader.class).createRequest(method,
             ImmutableList.<Object> of("robot", "eggs")).getHeaders();
       assertEquals(headers.size(), 1);
       assertEquals(headers.get("x-amz-copy-source"), ImmutableList.of("/eggs/robot"));
@@ -1586,13 +1612,15 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    @Test
    public void testQueryInOptions() throws SecurityException, NoSuchMethodException {
-      Invokable<?, ?> method = Invokable.from(TestQueryReplace.class.getMethod("queryInOptions", String.class, TestReplaceQueryOptions.class));
-      String query = factory(TestQueryReplace.class)
-            .createRequest(method, ImmutableList.<Object> of("robot", new TestReplaceQueryOptions())).getEndpoint().getQuery();
+      Invokable<?, ?> method = Invokable.from(TestQueryReplace.class.getMethod("queryInOptions", String.class,
+            TestReplaceQueryOptions.class));
+      String query = processor(TestQueryReplace.class)
+            .createRequest(method, ImmutableList.<Object> of("robot", new TestReplaceQueryOptions())).getEndpoint()
+            .getQuery();
       assertEquals(query, "x-amz-copy-source=/robot");
    }
 
-      public class TestQueryReplace {
+   public class TestQueryReplace {
 
       @GET
       @Path("/")
@@ -1607,7 +1635,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
       @GET
       @Path("/")
-      @QueryParams(keys = { "slash", "hyphen"}, values = { "/{bucket}", "-{bucket}"})
+      @QueryParams(keys = { "slash", "hyphen" }, values = { "/{bucket}", "-{bucket}" })
       public void twoQuery(@PathParam("bucket") String path) {
       }
 
@@ -1627,8 +1655,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testBuildTwoQuery() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQueryReplace.class.getMethod("twoQuery", String.class));
-      String query = factory(TestQueryReplace.class).createRequest(method, ImmutableList.<Object> of("robot")).getEndpoint()
-            .getQuery();
+      String query = processor(TestQueryReplace.class).createRequest(method, ImmutableList.<Object> of("robot"))
+            .getEndpoint().getQuery();
       assertEquals(query, "slash=/robot&hyphen=-robot");
    }
 
@@ -1643,31 +1671,33 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testBuildOneClassQuery() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestClassQuery.class.getMethod("oneQuery", String.class));
-      String query = factory(TestClassQuery.class).createRequest(method, ImmutableList.<Object> of("robot")).getEndpoint()
-            .getQuery();
+      String query = processor(TestClassQuery.class).createRequest(method, ImmutableList.<Object> of("robot"))
+            .getEndpoint().getQuery();
       assertEquals(query, "x-amz-copy-source=/robot");
    }
 
    @Test
    public void testBuildOneQuery() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestQueryReplace.class.getMethod("oneQuery", String.class));
-      String query = factory(TestQueryReplace.class).createRequest(method, ImmutableList.<Object> of("robot")).getEndpoint()
-            .getQuery();
+      String query = processor(TestQueryReplace.class).createRequest(method, ImmutableList.<Object> of("robot"))
+            .getEndpoint().getQuery();
       assertEquals(query, "x-amz-copy-source=/robot");
    }
 
    @Test
    public void testBuildTwoQuerys() throws SecurityException, NoSuchMethodException {
-      Invokable<?, ?> method = Invokable.from(TestQueryReplace.class.getMethod("twoQuerys", String.class, String.class));
-      String query = factory(TestQueryReplace.class).createRequest(method, ImmutableList.<Object> of("robot", "eggs"))
-            .getEndpoint().getQuery();
+      Invokable<?, ?> method = Invokable
+            .from(TestQueryReplace.class.getMethod("twoQuerys", String.class, String.class));
+      String query = processor(TestQueryReplace.class)
+            .createRequest(method, ImmutableList.<Object> of("robot", "eggs")).getEndpoint().getQuery();
       assertEquals(query, "x-amz-copy-source=/robot/eggs");
    }
 
    @Test
    public void testBuildTwoQuerysOutOfOrder() throws SecurityException, NoSuchMethodException {
-      Invokable<?, ?> method = Invokable.from(TestQueryReplace.class.getMethod("twoQuerysOutOfOrder", String.class, String.class));
-      String query = factory(TestQueryReplace.class)
+      Invokable<?, ?> method = Invokable.from(TestQueryReplace.class.getMethod("twoQuerysOutOfOrder", String.class,
+            String.class));
+      String query = processor(TestQueryReplace.class)
             .createRequest(method, ImmutableList.<Object> of("robot", "eggs")).getEndpoint().getQuery();
       assertEquals(query, "x-amz-copy-source=/eggs/robot");
    }
@@ -1703,9 +1733,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testPutPayloadEnclosing() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", PayloadEnclosing.class));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(
-            new PayloadEnclosingImpl(newStringPayload("whoops"))));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(new PayloadEnclosingImpl(newStringPayload("whoops"))));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "whoops", "application/unknown", false);
    }
@@ -1714,8 +1744,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", PayloadEnclosing.class));
       PayloadEnclosing payloadEnclosing = new PayloadEnclosingImpl(newStringPayload("whoops"));
       calculateMD5(payloadEnclosing);
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(payloadEnclosing));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(payloadEnclosing));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
 
       assertPayloadEquals(request, "whoops", "application/unknown", true);
@@ -1728,8 +1759,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
             newInputStreamPayload(Strings2.toInputStream("whoops")));
 
       calculateMD5(payloadEnclosing);
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(payloadEnclosing));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(payloadEnclosing));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
 
       assertPayloadEquals(request, "whoops", "application/unknown", true);
@@ -1737,16 +1769,18 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testPutPayloadChunkedNoContentLength() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("putXfer", Payload.class));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(newStringPayload("whoops")));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(newStringPayload("whoops")));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "Transfer-Encoding: chunked\n");
       assertPayloadEquals(request, "whoops", "application/unknown", false);
    }
 
    public void testPutPayload() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", Payload.class));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(newStringPayload("whoops")));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(newStringPayload("whoops")));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "whoops", "application/unknown", false);
    }
@@ -1755,8 +1789,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", Payload.class));
       Payload payload = newStringPayload("whoops");
       payload.getContentMetadata().setContentDisposition("attachment; filename=photo.jpg");
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(payload));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(payload));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "whoops", "application/unknown", "attachment; filename=photo.jpg", null, null, false);
    }
@@ -1765,8 +1800,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", Payload.class));
       Payload payload = newStringPayload("whoops");
       payload.getContentMetadata().setContentEncoding("gzip");
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(payload));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(payload));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "whoops", "application/unknown", null, "gzip", null, false);
    }
@@ -1775,8 +1811,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", Payload.class));
       Payload payload = newStringPayload("whoops");
       payload.getContentMetadata().setContentLanguage("en");
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(payload));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(payload));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "whoops", "application/unknown", null, null, "en", false);
    }
@@ -1786,8 +1823,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Payload payload = newStringPayload("whoops");
       calculateMD5(payload);
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", Payload.class));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(payload));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(payload));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "whoops", "application/unknown", true);
    }
@@ -1796,8 +1834,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Payload payload = newInputStreamPayload(Strings2.toInputStream("whoops"));
       payload.getContentMetadata().setContentLength((long) "whoops".length());
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", Payload.class));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(payload));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(payload));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "whoops", "application/unknown", false);
    }
@@ -1807,27 +1846,28 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       Payload payload = newStringPayload("whoops");
       calculateMD5(payload);
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("put", Payload.class));
-      HttpRequest request = factory(TestQuery.class).createRequest(method, ImmutableList.<Object> of(payload));
-      assertRequestLineEquals(request, "PUT http://localhost:9999?x-ms-version=2009-07-17 HTTP/1.1");
+      GeneratedHttpRequest request = processor(TestTransformers.class).createRequest(method,
+            ImmutableList.<Object> of(payload));
+      assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
       assertPayloadEquals(request, "whoops", "application/unknown", true);
    }
 
    public void testInputStreamListenableFuture() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("futureInputStream"));
-      Class<? extends Function<HttpResponse, ?>> transformer = unwrap(factory(TestTransformers.class), method);
+      Class<? extends Function<HttpResponse, ?>> transformer = unwrap(TestTransformers.class, method);
       assertEquals(transformer, ReturnInputStream.class);
    }
 
    @SuppressWarnings("unchecked")
-   public static Class<? extends Function<HttpResponse, ?>> unwrap(RestAnnotationProcessor processor, Invokable<?, ?> method) {
-      return (Class<? extends Function<HttpResponse, ?>>) AsyncRestClientProxy
-            .getParserOrThrowException(method).getTypeLiteral().getRawType();
+   public <T> Class<? extends Function<HttpResponse, ?>> unwrap(Class<T> type, Invokable<?, ?> method) {
+      return (Class<? extends Function<HttpResponse, ?>>) transformer(type)
+            .getParserOrThrowException(Invocation.create(method, ImmutableList.of())).getTypeLiteral().getRawType();
    }
 
    public void testURIListenableFuture() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("futureUri"));
-      Class<? extends Function<HttpResponse, ?>> transformer = unwrap(factory(TestTransformers.class), method);
+      Class<? extends Function<HttpResponse, ?>> transformer = unwrap(TestTransformers.class, method);
       assertEquals(transformer, ParseURIFromListOrLocationHeaderIf20x.class);
    }
 
@@ -1843,24 +1883,28 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    }
 
-   @Test(expectedExceptions = { RuntimeException.class })
+   @Test(expectedExceptions = RuntimeException.class)
    public void testNoTransformer() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("noTransformer"));
-      AsyncRestClientProxy.getParserOrThrowException(method);
+      unwrap(TestTransformers.class, method);
    }
 
    public void oneTransformerWithContext() throws SecurityException, NoSuchMethodException {
-      GeneratedHttpRequest request = GeneratedHttpRequest.builder()
-            .method("GET").endpoint("http://localhost").declaring(TestTransformers.class)
-            .invoker(Invokable.from(TestTransformers.class.getMethod("oneTransformerWithContext"))).build();
-      Function<HttpResponse, ?> transformer = AsyncRestClientProxy.createResponseParser(parserFactory, injector, request.getInvoker(), request);
+      GeneratedHttpRequest request = GeneratedHttpRequest
+            .builder(TypeToken.of(TestTransformers.class))
+            .method("GET")
+            .endpoint("http://localhost")
+            .invocation(
+                  Invocation.create(Invokable.from(TestTransformers.class.getMethod("oneTransformerWithContext")),
+                        ImmutableList.of())).build();
+      Function<HttpResponse, ?> transformer = transformer(TestTransformers.class).apply(request);
       assertEquals(transformer.getClass(), ReturnStringIf200Context.class);
       assertEquals(((ReturnStringIf200Context) transformer).request, request);
    }
 
    public void testOneTransformer() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestTransformers.class.getMethod("oneTransformer"));
-      Class<? extends Function<HttpResponse, ?>> transformer = unwrap(factory(TestTransformers.class), method);
+      Class<? extends Function<HttpResponse, ?>> transformer = unwrap(TestTransformers.class, method);
       assertEquals(transformer, ReturnStringIf2xx.class);
    }
 
@@ -1916,8 +1960,10 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    public void testCreateGetVarArgOptionsThatProducesHeaders() throws SecurityException, NoSuchMethodException {
       Date date = new Date();
       GetOptions options = GetOptions.Builder.ifModifiedSince(date);
-      Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("get", String.class, HttpRequestOptions[].class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1", options));
+      Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("get", String.class,
+            HttpRequestOptions[].class));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method,
+            ImmutableList.<Object> of("1", options));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/1");
       assertEquals(request.getMethod(), HttpMethod.GET);
@@ -1930,8 +1976,10 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    public void testCreateGetOptionsThatProducesHeaders() throws SecurityException, NoSuchMethodException {
       Date date = new Date();
       GetOptions options = GetOptions.Builder.ifModifiedSince(date);
-      Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("get", String.class, HttpRequestOptions.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1", options));
+      Invokable<?, ?> method = Invokable.from(TestRequest.class
+            .getMethod("get", String.class, HttpRequestOptions.class));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method,
+            ImmutableList.<Object> of("1", options));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/1");
       assertEquals(request.getMethod(), HttpMethod.GET);
@@ -1950,8 +1998,10 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreateGetOptionsThatProducesQuery() throws SecurityException, NoSuchMethodException, IOException {
       PrefixOptions options = new PrefixOptions().withPrefix("1");
-      Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("get", String.class, HttpRequestOptions.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1", options));
+      Invokable<?, ?> method = Invokable.from(TestRequest.class
+            .getMethod("get", String.class, HttpRequestOptions.class));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method,
+            ImmutableList.<Object> of("1", options));
       assertRequestLineEquals(request, "GET http://localhost:9999/1?prefix=1 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "Host: localhost:9999\n");
       assertPayloadEquals(request, null, null, false);
@@ -1959,7 +2009,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreateGetQuery() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("getQuery", String.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1"));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1"));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/1");
       assertEquals(request.getEndpoint().getQuery(), "max-keys=0");
@@ -1969,7 +2019,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreateGetQueryNull() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("getQueryNull", String.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1"));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1"));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/1");
       assertEquals(request.getEndpoint().getQuery(), "acl");
@@ -1979,7 +2029,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreateGetQueryEmpty() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("getQueryEmpty", String.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1"));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1"));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/1");
       assertEquals(request.getEndpoint().getQuery(), "acl=");
@@ -1996,8 +2046,10 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreateGetOptionsThatProducesPayload() throws SecurityException, NoSuchMethodException, IOException {
       PayloadOptions options = new PayloadOptions();
-      Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("putOptions", String.class, HttpRequestOptions.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1", options));
+      Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("putOptions", String.class,
+            HttpRequestOptions.class));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method,
+            ImmutableList.<Object> of("1", options));
 
       assertRequestLineEquals(request, "PUT http://localhost:9999/1 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "Host: localhost:9999\n");
@@ -2013,7 +2065,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    public void testCreateGetRequest(String key) throws SecurityException, NoSuchMethodException,
          UnsupportedEncodingException {
       Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("get", String.class, String.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of(key, "localhost"));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method,
+            ImmutableList.<Object> of(key, "localhost"));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       String expectedPath = "/" + URLEncoder.encode(key, "UTF-8").replaceAll("\\+", "%20");
       assertEquals(request.getEndpoint().getRawPath(), expectedPath);
@@ -2025,7 +2078,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePutRequest() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("put", String.class, String.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("111", "data"));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method,
+            ImmutableList.<Object> of("111", "data"));
 
       assertRequestLineEquals(request, "PUT http://localhost:9999/1 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -2034,7 +2088,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    public void testCreatePutHeader() throws SecurityException, NoSuchMethodException, IOException {
       Invokable<?, ?> method = Invokable.from(TestRequest.class.getMethod("putHeader", String.class, String.class));
-      HttpRequest request = factory(TestRequest.class).createRequest(method, ImmutableList.<Object> of("1", "data"));
+      GeneratedHttpRequest request = processor(TestRequest.class).createRequest(method,
+            ImmutableList.<Object> of("1", "data"));
 
       assertRequestLineEquals(request, "PUT http://localhost:9999/1 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "foo: --1--\n");
@@ -2053,7 +2108,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testVirtualHostMethod() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestVirtualHostMethod.class.getMethod("get", String.class, String.class));
-      HttpRequest request = factory(TestVirtualHostMethod.class).createRequest(method,
+      GeneratedHttpRequest request = processor(TestVirtualHostMethod.class).createRequest(method,
             ImmutableList.<Object> of("1", "localhost"));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/1");
@@ -2077,7 +2132,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testVirtualHost() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestVirtualHost.class.getMethod("get", String.class, String.class));
-      HttpRequest request = factory(TestVirtualHost.class).createRequest(method, ImmutableList.<Object> of("1", "localhost"));
+      GeneratedHttpRequest request = processor(TestVirtualHost.class).createRequest(method,
+            ImmutableList.<Object> of("1", "localhost"));
       assertEquals(request.getEndpoint().getHost(), "localhost");
       assertEquals(request.getEndpoint().getPath(), "/1");
       assertEquals(request.getMethod(), HttpMethod.GET);
@@ -2088,7 +2144,8 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testHostPrefix() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestVirtualHost.class.getMethod("getPrefix", String.class, String.class));
-      HttpRequest request = factory(TestVirtualHost.class).createRequest(method, ImmutableList.<Object> of("1", "holy"));
+      GeneratedHttpRequest request = processor(TestVirtualHost.class).createRequest(method,
+            ImmutableList.<Object> of("1", "holy"));
       assertEquals(request.getEndpoint().getHost(), "holy.localhost");
       assertEquals(request.getEndpoint().getPath(), "/1");
       assertEquals(request.getMethod(), HttpMethod.GET);
@@ -2098,7 +2155,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test(expectedExceptions = IllegalArgumentException.class)
    public void testHostPrefixEmpty() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestVirtualHost.class.getMethod("getPrefix", String.class, String.class));
-      factory(TestVirtualHost.class).createRequest(method, ImmutableList.<Object> of("1", ""));
+      processor(TestVirtualHost.class).createRequest(method, ImmutableList.<Object> of("1", ""));
    }
 
    public interface TestHeaders {
@@ -2118,7 +2175,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testOneHeader() throws SecurityException, NoSuchMethodException, ExecutionException {
       Invokable<?, ?> method = Invokable.from(TestHeaders.class.getMethod("oneHeader", String.class));
-      Multimap<String, String> headers = factory(TestHeaders.class).createRequest(method,
+      Multimap<String, String> headers = processor(TestHeaders.class).createRequest(method,
             ImmutableList.<Object> of("robot")).getHeaders();
       assertEquals(headers.size(), 1);
       assertEquals(headers.get("header"), ImmutableList.of("robot"));
@@ -2127,17 +2184,18 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testOneIntHeader() throws SecurityException, NoSuchMethodException, ExecutionException {
       Invokable<?, ?> method = Invokable.from(TestHeaders.class.getMethod("oneIntHeader", int.class));
-      Multimap<String, String> headers = factory(TestHeaders.class).createRequest(method,
-            ImmutableList.<Object> of(1)).getHeaders(); 
+      Multimap<String, String> headers = processor(TestHeaders.class).createRequest(method,
+            ImmutableList.<Object> of(1)).getHeaders();
       assertEquals(headers.size(), 1);
       assertEquals(headers.get("header"), ImmutableList.of("1"));
    }
 
    @Test
    public void testTwoDifferentHeaders() throws SecurityException, NoSuchMethodException, ExecutionException {
-      Invokable<?, ?> method = Invokable.from(TestHeaders.class.getMethod("twoDifferentHeaders", String.class, String.class));
-      Multimap<String, String> headers = factory(TestHeaders.class).createRequest(method,
-            ImmutableList.<Object> of("robot", "egg")).getHeaders();  
+      Invokable<?, ?> method = Invokable.from(TestHeaders.class.getMethod("twoDifferentHeaders", String.class,
+            String.class));
+      Multimap<String, String> headers = processor(TestHeaders.class).createRequest(method,
+            ImmutableList.<Object> of("robot", "egg")).getHeaders();
       assertEquals(headers.size(), 2);
       assertEquals(headers.get("header1"), ImmutableList.of("robot"));
       assertEquals(headers.get("header2"), ImmutableList.of("egg"));
@@ -2145,9 +2203,10 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    @Test
    public void testTwoSameHeaders() throws SecurityException, NoSuchMethodException, ExecutionException {
-      Invokable<?, ?> method = Invokable.from(TestHeaders.class.getMethod("twoSameHeaders", String.class, String.class));
-      Multimap<String, String> headers = factory(TestHeaders.class).createRequest(method,
-            ImmutableList.<Object> of("robot", "egg")).getHeaders();  
+      Invokable<?, ?> method = Invokable
+            .from(TestHeaders.class.getMethod("twoSameHeaders", String.class, String.class));
+      Multimap<String, String> headers = processor(TestHeaders.class).createRequest(method,
+            ImmutableList.<Object> of("robot", "egg")).getHeaders();
       assertEquals(headers.size(), 2);
       Collection<String> values = headers.get("header");
       assert values.contains("robot");
@@ -2188,17 +2247,18 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testOneEndpointParam() throws SecurityException, NoSuchMethodException, ExecutionException {
       Invokable<?, ?> method = Invokable.from(TestEndpointParams.class.getMethod("oneEndpointParam", String.class));
-      URI uri = RestAnnotationProcessor.getEndpointInParametersOrNull(method, ImmutableList.<Object> of("robot"),
-            injector);
+      URI uri = RestAnnotationProcessor.getEndpointInParametersOrNull(
+            Invocation.create(method, ImmutableList.<Object> of("robot")), injector);
       assertEquals(uri, URI.create("robot"));
 
    }
 
    @Test(expectedExceptions = IllegalStateException.class)
    public void testTwoDifferentEndpointParams() throws SecurityException, NoSuchMethodException, ExecutionException {
-      Invokable<?, ?> method = Invokable.from(TestEndpointParams.class.getMethod("twoEndpointParams", String.class, String.class));
-      RestAnnotationProcessor.getEndpointInParametersOrNull(method,
-            ImmutableList.<Object> of("robot", "egg"), injector);
+      Invokable<?, ?> method = Invokable.from(TestEndpointParams.class.getMethod("twoEndpointParams", String.class,
+            String.class));
+      RestAnnotationProcessor.getEndpointInParametersOrNull(
+            Invocation.create(method, ImmutableList.<Object> of("robot", "egg")), injector);
    }
 
    public interface TestPayload {
@@ -2217,9 +2277,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    @Test
    public void testPut() throws SecurityException, NoSuchMethodException, IOException {
-      RestAnnotationProcessor processor = factory(TestPayload.class);
       Invokable<?, ?> method = Invokable.from(TestPayload.class.getMethod("put", String.class));
-      GeneratedHttpRequest request = processor.createRequest(method, ImmutableList.<Object> of("test"));
+      GeneratedHttpRequest request = processor(TestPayload.class).createRequest(method,
+            ImmutableList.<Object> of("test"));
 
       assertRequestLineEquals(request, "PUT http://localhost:9999 HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -2228,9 +2288,9 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    @Test
    public void putWithPath() throws SecurityException, NoSuchMethodException, IOException {
-      RestAnnotationProcessor processor = factory(TestPayload.class);
       Invokable<?, ?> method = Invokable.from(TestPayload.class.getMethod("putWithPath", String.class, String.class));
-      GeneratedHttpRequest request = processor.createRequest(method, ImmutableList.<Object> of("rabble", "test"));
+      GeneratedHttpRequest request = processor(TestPayload.class).createRequest(method,
+            ImmutableList.<Object> of("rabble", "test"));
 
       assertRequestLineEquals(request, "PUT http://localhost:9999/rabble HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "");
@@ -2243,7 +2303,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       }
    }
 
-      public class TestFormReplace {
+   public class TestFormReplace {
 
       @POST
       @Path("/")
@@ -2258,7 +2318,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
       @POST
       @Path("/")
-      @FormParams(keys = { "slash", "hyphen"}, values = { "/{bucket}", "-{bucket}"})
+      @FormParams(keys = { "slash", "hyphen" }, values = { "/{bucket}", "-{bucket}" })
       public void twoForm(@PathParam("bucket") String path) {
       }
 
@@ -2278,12 +2338,13 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    @Test
    public void testBuildTwoForm() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestFormReplace.class.getMethod("twoForm", String.class));
-      Object form = factory(TestFormReplace.class).createRequest(method, ImmutableList.<Object> of("robot")).getPayload().getRawContent();
+      Object form = processor(TestFormReplace.class).createRequest(method, ImmutableList.<Object> of("robot"))
+            .getPayload().getRawContent();
       assertEquals(form, "slash=/robot&hyphen=-robot");
    }
 
    @FormParams(keys = "x-amz-copy-source", values = "/{bucket}")
-      public interface TestClassForm {
+   public interface TestClassForm {
       @Provides
       Set<String> set();
 
@@ -2298,13 +2359,16 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
       @Named("NoSuchElementException")
       @Provides
       Set<String> noSuchElementException();
-      
+
       @POST
       @Path("/")
       void oneForm(@PathParam("bucket") String path);
    }
 
-   static final Key<AsyncClientProvider<TestClassForm>> formKey = Key.get(new TypeLiteral<AsyncClientProvider<TestClassForm>>(){});
+   static final Key<AsyncHttpApiProvider<TestClassForm>> formKey = Key
+         .get(new TypeLiteral<AsyncHttpApiProvider<TestClassForm>>() {
+         });
+
    @Test
    public void testProvidesWithGeneric() throws SecurityException, NoSuchMethodException {
       Set<String> set = injector.getInstance(formKey).get().set();
@@ -2321,39 +2385,42 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
    public void testProvidesWithGenericQualifiedAuthorizationException() throws SecurityException, NoSuchMethodException {
       injector.getInstance(formKey).get().exception();
    }
-   
+
    @Test(expectedExceptions = NoSuchElementException.class)
    public void testProvidesWithGenericQualifiedNoSuchElementException() throws SecurityException, NoSuchMethodException {
       injector.getInstance(formKey).get().noSuchElementException();
    }
-   
+
    @Test
    public void testBuildOneClassForm() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestClassForm.class.getMethod("oneForm", String.class));
-      Object form = factory(TestClassForm.class).createRequest(method, ImmutableList.<Object> of("robot")).getPayload().getRawContent();
+      Object form = processor(TestClassForm.class).createRequest(method, ImmutableList.<Object> of("robot"))
+            .getPayload().getRawContent();
       assertEquals(form, "x-amz-copy-source=/robot");
    }
 
    @Test
    public void testBuildOneForm() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestFormReplace.class.getMethod("oneForm", String.class));
-      Object form = factory(TestFormReplace.class).createRequest(method, ImmutableList.<Object> of("robot")).getPayload().getRawContent();
+      Object form = processor(TestFormReplace.class).createRequest(method, ImmutableList.<Object> of("robot"))
+            .getPayload().getRawContent();
       assertEquals(form, "x-amz-copy-source=/robot");
    }
 
    @Test
    public void testBuildTwoForms() throws SecurityException, NoSuchMethodException {
       Invokable<?, ?> method = Invokable.from(TestFormReplace.class.getMethod("twoForms", String.class, String.class));
-      Object form = factory(TestFormReplace.class).createRequest(method, ImmutableList.<Object> of("robot", "eggs")).getPayload()
-            .getRawContent();
+      Object form = processor(TestFormReplace.class).createRequest(method, ImmutableList.<Object> of("robot", "eggs"))
+            .getPayload().getRawContent();
       assertEquals(form, "x-amz-copy-source=/robot/eggs");
    }
 
    @Test
    public void testBuildTwoFormsOutOfOrder() throws SecurityException, NoSuchMethodException {
-      Invokable<?, ?> method = Invokable.from(TestFormReplace.class.getMethod("twoFormsOutOfOrder", String.class, String.class));
-      Object form = factory(TestFormReplace.class).createRequest(method, ImmutableList.<Object> of("robot", "eggs")).getPayload()
-            .getRawContent();
+      Invokable<?, ?> method = Invokable.from(TestFormReplace.class.getMethod("twoFormsOutOfOrder", String.class,
+            String.class));
+      Object form = processor(TestFormReplace.class).createRequest(method, ImmutableList.<Object> of("robot", "eggs"))
+            .getPayload().getRawContent();
       assertEquals(form, "x-amz-copy-source=/eggs/robot");
    }
 
@@ -2390,7 +2457,7 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
 
    @BeforeClass
    void setupFactory() {
-      injector =  ContextBuilder
+      injector = ContextBuilder
             .newBuilder(
                   AnonymousProviderMetadata.forClientMappedToAsyncClientOnEndpoint(Callee.class, AsyncCallee.class,
                         "http://localhost:9999"))
@@ -2412,15 +2479,14 @@ public class RestAnnotationProcessorTest extends BaseRestApiTest {
                Set<String> exception() {
                   throw new AuthorizationException();
                }
-               
+
                @Provides
                @Named("NoSuchElementException")
                Set<String> noSuchElementException() {
                   throw new NoSuchElementException();
                }
-               
+
             })).buildInjector();
       parserFactory = injector.getInstance(ParseSax.Factory.class);
    }
-
 }

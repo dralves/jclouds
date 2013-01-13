@@ -26,6 +26,7 @@ import org.jclouds.http.IntegrationTestAsyncClient;
 import org.jclouds.http.IntegrationTestClient;
 import org.jclouds.predicates.validators.AllLowerCaseValidator;
 import org.jclouds.providers.AnonymousProviderMetadata;
+import org.jclouds.reflect.Invocation;
 import org.jclouds.rest.annotations.ParamValidators;
 import org.jclouds.rest.internal.RestAnnotationProcessor;
 import org.testng.TestException;
@@ -35,6 +36,8 @@ import org.testng.annotations.Test;
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.Invokable;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 
 @Test(groups = "unit")
 public class InputParamValidatorTest {
@@ -62,7 +65,6 @@ public class InputParamValidatorTest {
             "allParamsValidated", String.class, String.class));
       Invokable<?, ?> oneParamValidatedMethod = Invokable.from(InputParamValidatorForm.class.getMethod(
             "oneParamValidated", String.class, String.class));
-      RestAnnotationProcessor restAnnotationProcessor = factory(InputParamValidatorForm.class);
       restAnnotationProcessor.createRequest(allParamsValidatedMethod, ImmutableList.<Object> of("blah", "blah"));
       restAnnotationProcessor.createRequest(oneParamValidatedMethod, ImmutableList.<Object> of("blah", "blah"));
 
@@ -98,15 +100,13 @@ public class InputParamValidatorTest {
 
    @Test(expectedExceptions = ClassCastException.class)
    public void testWrongPredicateTypeLiteral() throws Exception {
-      Invokable<?, ?> method = Invokable.from(WrongValidator.class.getMethod("method", Integer.class));
-      new InputParamValidator(injector).validateMethodParametersOrThrow(method, ImmutableList.<Object> of(55));
-   }
-
-   private RestAnnotationProcessor factory(Class<?> clazz) {
-      return injector.getInstance(RestAnnotationProcessor.Factory.class).declaring(clazz);
+      Invocation invocation = Invocation.create(Invokable.from(WrongValidator.class.getMethod("method", Integer.class)),
+            ImmutableList.<Object> of(55));
+      new InputParamValidator(injector).validateMethodParametersOrThrow(invocation);
    }
 
    Injector injector;
+   RestAnnotationProcessor<IntegrationTestAsyncClient> restAnnotationProcessor;
 
    @BeforeClass
    void setupFactory() {
@@ -114,7 +114,7 @@ public class InputParamValidatorTest {
             .newBuilder(
                   AnonymousProviderMetadata.forClientMappedToAsyncClientOnEndpoint(IntegrationTestClient.class, IntegrationTestAsyncClient.class,
                         "http://localhost:9999")).buildInjector();
-
+      restAnnotationProcessor = injector.getInstance(Key.get(new TypeLiteral<RestAnnotationProcessor<IntegrationTestAsyncClient>>(){}));
    }
 
 }

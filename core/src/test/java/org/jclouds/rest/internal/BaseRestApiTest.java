@@ -19,8 +19,12 @@
 package org.jclouds.rest.internal;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.hash.Hashing.md5;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static com.google.inject.name.Names.named;
 import static org.easymock.EasyMock.createMock;
 import static org.eclipse.jetty.http.HttpHeaders.TRANSFER_ENCODING;
+import static org.jclouds.Constants.PROPERTY_IO_WORKER_THREADS;
+import static org.jclouds.Constants.PROPERTY_USER_THREADS;
 import static org.jclouds.io.ByteSources.asByteSource;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -28,10 +32,7 @@ import static org.testng.Assert.assertNull;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
 
-import org.jclouds.Constants;
-import org.jclouds.concurrent.MoreExecutors;
 import org.jclouds.concurrent.config.ConfiguresExecutorService;
 import org.jclouds.fallbacks.MapHttp4xxCodesToExceptions;
 import org.jclouds.http.HttpCommandExecutorService;
@@ -49,9 +50,12 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.reflect.Invokable;
+import com.google.common.reflect.TypeParameter;
+import com.google.common.reflect.TypeToken;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
-import com.google.inject.name.Names;
+import com.google.inject.Key;
 
 /**
  * 
@@ -78,10 +82,8 @@ public abstract class BaseRestApiTest {
 
       @Override
       protected void configure() {
-         bind(ExecutorService.class).annotatedWith(Names.named(Constants.PROPERTY_USER_THREADS)).toInstance(
-               MoreExecutors.sameThreadExecutor());
-         bind(ExecutorService.class).annotatedWith(Names.named(Constants.PROPERTY_IO_WORKER_THREADS)).toInstance(
-               MoreExecutors.sameThreadExecutor());
+         bind(ListeningExecutorService.class).annotatedWith(named(PROPERTY_USER_THREADS)).toInstance(sameThreadExecutor());
+         bind(ListeningExecutorService.class).annotatedWith(named(PROPERTY_IO_WORKER_THREADS)).toInstance(sameThreadExecutor());
          bind(HttpCommandExecutorService.class).toInstance(mock);
       }
    }
@@ -175,12 +177,27 @@ public abstract class BaseRestApiTest {
       assertEquals(expected, parserClass);
    }
 
-   protected void assertResponseParserClassEquals(Invokable<?, ?> method, HttpRequest request, @Nullable Class<?> parserClass) {
-      assertEquals(AsyncRestClientProxy.createResponseParser(parserFactory, injector, method, request).getClass(), parserClass);
+   protected void assertResponseParserClassEquals(Invokable<?, ?> method, GeneratedHttpRequest request,
+         @Nullable Class<?> parserClass) {
+      assertEquals(transformer(method.getDeclaringClass()).apply(request).getClass(), parserClass);
    }
 
-   protected RestAnnotationProcessor factory(Class<?> clazz) {
-      return injector.getInstance(RestAnnotationProcessor.Factory.class).declaring(clazz);
+   protected <T> RestAnnotationProcessor<T> processor(Class<T> type) {
+      TypeToken<RestAnnotationProcessor<T>> token = new TypeToken<RestAnnotationProcessor<T>>() {
+         private static final long serialVersionUID = 1L;
+      }.where(new TypeParameter<T>() {
+      }, type);
+      Key<RestAnnotationProcessor<T>> rapKey = (Key<RestAnnotationProcessor<T>>) Key.get(token.getType());
+      return injector.getInstance(rapKey);
+   }
+
+   protected <T> TransformerForRequest<T> transformer(Class<T> type) {
+      TypeToken<TransformerForRequest<T>> token = new TypeToken<TransformerForRequest<T>>() {
+         private static final long serialVersionUID = 1L;
+      }.where(new TypeParameter<T>() {
+      }, type);
+      Key<TransformerForRequest<T>> rapKey = (Key<TransformerForRequest<T>>) Key.get(token.getType());
+      return injector.getInstance(rapKey);
    }
 
 }
