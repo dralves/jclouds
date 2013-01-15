@@ -21,8 +21,9 @@ package org.jclouds.savvis.vpdc.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.jclouds.Constants.PROPERTY_SESSION_INTERVAL;
-import static org.jclouds.rest.config.BinderUtils.bindClientAndAsyncClient;
+import static org.jclouds.rest.config.BinderUtils.bindHttpApi;
 import static org.jclouds.savvis.vpdc.reference.VPDCConstants.PROPERTY_VPDC_TIMEOUT_TASK_COMPLETED;
+import static org.jclouds.util.Predicates2.retry;
 
 import java.io.IOException;
 import java.util.Map;
@@ -40,7 +41,6 @@ import org.jclouds.http.annotation.ServerError;
 import org.jclouds.json.Json;
 import org.jclouds.location.Provider;
 import org.jclouds.location.suppliers.ImplicitLocationSupplier;
-import org.jclouds.predicates.RetryablePredicate;
 import org.jclouds.rest.ConfiguresRestClient;
 import org.jclouds.rest.annotations.Identity;
 import org.jclouds.rest.config.RestClientModule;
@@ -86,7 +86,7 @@ public class VPDCRestClientModule extends RestClientModule<VPDCApi, VPDCAsyncApi
    @Override
    protected void configure() {
       super.configure();
-      bindClientAndAsyncClient(binder(), LoginApi.class, LoginAsyncApi.class);
+      bindHttpApi(binder(), LoginApi.class, LoginAsyncApi.class);
    }
 
    @VCloudToken
@@ -138,7 +138,7 @@ public class VPDCRestClientModule extends RestClientModule<VPDCApi, VPDCAsyncApi
    @Singleton
    protected Predicate<String> successTester(Injector injector,
             @Named(PROPERTY_VPDC_TIMEOUT_TASK_COMPLETED) long completed) {
-      return new RetryablePredicate<String>(injector.getInstance(TaskSuccess.class), completed);
+      return retry(injector.getInstance(TaskSuccess.class), completed);
    }
 
    public static final Map<Class<?>, Class<?>> DELEGATE_MAP = ImmutableMap.<Class<?>, Class<?>> builder()//

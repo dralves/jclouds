@@ -45,11 +45,31 @@ public class BinderUtils {
     * @param async
     *           type type that returns {@link ListenableFuture}
     */
-   public static <S, A> void bindClientAndAsyncClient(Binder binder, Class<S> sync, Class<A> async) {
-      bindAsyncClient(binder, async);
-      bindClient(binder, sync, async);
+   public static <S, A> void bindHttpApi(Binder binder, Class<S> sync, Class<A> async) {
+      bindClass(binder, sync);
+      bindClass(binder, async);
+      bindAsyncHttpApiProvider(binder, async);
+      bindHttpApiProvider(binder, sync, async);
    }
-
+   
+   @SuppressWarnings("unchecked")
+   private static <T> void bindAsyncHttpApiProvider(Binder binder, Class<T> async) {
+      TypeToken<AsyncHttpApiProvider<T>> token = new TypeToken<AsyncHttpApiProvider<T>>() {
+         private static final long serialVersionUID = 1L;
+      }.where(new TypeParameter<T>() {
+      }, async);
+      binder.bind(async).toProvider(TypeLiteral.class.cast(TypeLiteral.get(token.getType())));
+   }
+   
+   @SuppressWarnings("unchecked")
+   private static <S, A> void bindHttpApiProvider(Binder binder, Class<S> sync, Class<A> async) {
+      TypeToken<HttpApiProvider<S, A>> token = new TypeToken<HttpApiProvider<S, A>>() {
+         private static final long serialVersionUID = 1L;
+      }.where(new TypeParameter<S>() {
+      }, sync).where(new TypeParameter<A>() {
+      }, async);
+      binder.bind(sync).toProvider(TypeLiteral.class.cast(TypeLiteral.get(token.getType())));
+   }
    /**
     * adds an explicit binding for an interface which synchronously blocks on similar calls to an {@code async} type.
     * 
@@ -64,10 +84,15 @@ public class BinderUtils {
     * @param async
     *           type type that returns {@link ListenableFuture}
     */
-   @SuppressWarnings("unchecked")
-   public static <S, A> void bindClient(Binder binder, Class<S> sync, Class<A> async) {
+   public static <S, A> void bindBlockingApi(Binder binder, Class<S> sync, Class<A> async) {
       bindClass(binder, sync);
-      TypeToken<ClientProvider<S, A>> token = new TypeToken<ClientProvider<S, A>>() {
+      bindClass(binder, async);
+      bindCallGetOnFutures(binder, sync, async);
+   }
+
+   @SuppressWarnings("unchecked")
+   private static <S, A> void bindCallGetOnFutures(Binder binder, Class<S> sync, Class<A> async) {
+      TypeToken<CallGetOnFuturesProvider<S, A>> token = new TypeToken<CallGetOnFuturesProvider<S, A>>() {
          private static final long serialVersionUID = 1L;
       }.where(new TypeParameter<S>() {
       }, sync).where(new TypeParameter<A>() {
@@ -82,15 +107,4 @@ public class BinderUtils {
       }.where(new TypeParameter<K>() {
       }, sync).getType()))).toInstance(sync);
    }
-
-   @SuppressWarnings("unchecked")
-   private static <T> void bindAsyncClient(Binder binder, Class<T> async) {
-      bindClass(binder, async);
-      TypeToken<AsyncClientProvider<T>> token = new TypeToken<AsyncClientProvider<T>>() {
-         private static final long serialVersionUID = 1L;
-      }.where(new TypeParameter<T>() {
-      }, async);
-      binder.bind(async).toProvider(TypeLiteral.class.cast(TypeLiteral.get(token.getType())));
-   }
-
 }

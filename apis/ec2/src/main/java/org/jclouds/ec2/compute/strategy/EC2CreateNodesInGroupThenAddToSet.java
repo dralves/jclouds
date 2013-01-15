@@ -30,7 +30,6 @@ import static org.jclouds.ec2.compute.util.EC2ComputeUtils.getZoneFromLocationOr
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.Resource;
@@ -58,12 +57,14 @@ import org.jclouds.logging.Logger;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * creates futures that correlate to
@@ -95,7 +96,7 @@ public class EC2CreateNodesInGroupThenAddToSet implements CreateNodesInGroupThen
    @VisibleForTesting
    final ComputeUtils utils;
    final PresentInstances presentInstances;
-   final LoadingCache<RunningInstance, LoginCredentials> instanceToCredentials;
+   final LoadingCache<RunningInstance, Optional<LoginCredentials>> instanceToCredentials;
    final Map<String, Credentials> credentialStore;
 
    @Inject
@@ -105,7 +106,7 @@ public class EC2CreateNodesInGroupThenAddToSet implements CreateNodesInGroupThen
          @Named(TIMEOUT_NODE_RUNNING) Predicate<AtomicReference<NodeMetadata>> nodeRunning,
          CreateKeyPairAndSecurityGroupsAsNeededAndReturnRunOptions createKeyPairAndSecurityGroupsAsNeededAndReturncustomize,
          PresentInstances presentInstances, Function<RunningInstance, NodeMetadata> runningInstanceToNodeMetadata,
-         LoadingCache<RunningInstance, LoginCredentials> instanceToCredentials,
+         LoadingCache<RunningInstance, Optional<LoginCredentials>> instanceToCredentials,
          Map<String, Credentials> credentialStore, ComputeUtils utils) {
       this.client = checkNotNull(client, "client");
       this.elasticIpCache = checkNotNull(elasticIpCache, "elasticIpCache");
@@ -128,7 +129,7 @@ public class EC2CreateNodesInGroupThenAddToSet implements CreateNodesInGroupThen
    };
 
    @Override
-   public Map<?, Future<Void>> execute(String group, int count, Template template, Set<NodeMetadata> goodNodes,
+   public Map<?, ListenableFuture<Void>> execute(String group, int count, Template template, Set<NodeMetadata> goodNodes,
          Map<NodeMetadata, Exception> badNodes, Multimap<NodeMetadata, CustomizationResponse> customizationResponses) {
 
       Template mutableTemplate = template.clone();
@@ -174,7 +175,7 @@ public class EC2CreateNodesInGroupThenAddToSet implements CreateNodesInGroupThen
    private void populateCredentials(Set<RunningInstance> input, TemplateOptions options) {
       LoginCredentials credentials = null;
       for (RunningInstance instance : input) {
-         credentials = instanceToCredentials.apply(instance);
+         credentials = instanceToCredentials.apply(instance).orNull();
          if (credentials != null)
             break;
       }

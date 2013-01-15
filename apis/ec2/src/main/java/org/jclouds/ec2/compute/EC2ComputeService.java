@@ -17,9 +17,13 @@
  * under the License.
  */
 package org.jclouds.ec2.compute;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.transform;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.jclouds.compute.config.ComputeServiceProperties.RESOURCENAME_DELIMITER;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_RUNNING;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_SUSPENDED;
@@ -28,13 +32,12 @@ import static org.jclouds.compute.util.ComputeServiceUtils.addMetadataAndParseTa
 import static org.jclouds.compute.util.ComputeServiceUtils.metadataAndTagsAsValuesOfEmptyString;
 import static org.jclouds.ec2.reference.EC2Constants.PROPERTY_EC2_GENERATE_INSTANCE_NAMES;
 import static org.jclouds.ec2.util.Tags.resourceToTagsAsMap;
-import static org.jclouds.util.Preconditions2.checkNotEmpty;
+import static org.jclouds.util.Predicates2.retry;
 
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Named;
@@ -79,7 +82,6 @@ import org.jclouds.ec2.domain.KeyPair;
 import org.jclouds.ec2.domain.RunningInstance;
 import org.jclouds.ec2.domain.Tag;
 import org.jclouds.ec2.util.TagFilterBuilder;
-import org.jclouds.predicates.Retryables;
 import org.jclouds.scriptbuilder.functions.InitAdminAccess;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -95,6 +97,7 @@ import com.google.common.collect.ImmutableMultimap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.inject.Inject;
 
 /**
@@ -123,7 +126,7 @@ public class EC2ComputeService extends BaseComputeService {
             InitializeRunScriptOnNodeOrPlaceInBadMap.Factory initScriptRunnerFactory,
             RunScriptOnNode.Factory runScriptOnNodeFactory, InitAdminAccess initAdminAccess,
             PersistNodeCredentials persistNodeCredentials, Timeouts timeouts,
-            @Named(Constants.PROPERTY_USER_THREADS) ExecutorService executor, EC2Client client,
+            @Named(Constants.PROPERTY_USER_THREADS) ListeningExecutorService userExecutor, EC2Client client,
             ConcurrentMap<RegionAndName, KeyPair> credentialsMap,
             @Named("SECURITY") LoadingCache<RegionAndName, String> securityGroupMap,
             Optional<ImageExtension> imageExtension, GroupNamingConvention.Factory namingConvention,
@@ -132,7 +135,7 @@ public class EC2ComputeService extends BaseComputeService {
                getNodeMetadataStrategy, runNodesAndAddToSetStrategy, rebootNodeStrategy, destroyNodeStrategy,
                startNodeStrategy, stopNodeStrategy, templateBuilderProvider, templateOptionsProvider, nodeRunning,
                nodeTerminated, nodeSuspended, initScriptRunnerFactory, initAdminAccess, runScriptOnNodeFactory,
-               persistNodeCredentials, timeouts, executor, imageExtension);
+               persistNodeCredentials, timeouts, userExecutor, imageExtension);
       this.client = client;
       this.credentialsMap = credentialsMap;
       this.securityGroupMap = securityGroupMap;
@@ -202,8 +205,8 @@ public class EC2ComputeService extends BaseComputeService {
     */
    @VisibleForTesting
    void deleteSecurityGroup(String region, String group) {
-      checkNotEmpty(region, "region");
-      checkNotEmpty(group, "group");
+      checkNotNull(emptyToNull(region), "region must be defined");
+      checkNotNull(emptyToNull(group), "group must be defined");
       String groupName = namingConvention.create().sharedNameForGroup(group);
       
       if (client.getSecurityGroupServices().describeSecurityGroupsInRegion(region, groupName).size() > 0) {
@@ -292,22 +295,21 @@ public class EC2ComputeService extends BaseComputeService {
       // Also in #445, in aws-ec2 the deleteSecurityGroup sometimes fails after terminating the final VM using a 
       // given security group, if called very soon after the VM's state reports terminated. Empirically, it seems that
       // waiting a small time (e.g. enabling logging or debugging!) then the tests pass. We therefore retry.
-      final int maxAttempts = 3;
-      Retryables.retryNumTimes(new Predicate<Void>() {
-            @Override
-            public boolean apply(Void input) {
-               try {
-                  logger.debug(">> deleting incidentalResources(%s @ %s)", region, group);
-                  deleteSecurityGroup(region, group);
-                  deleteKeyPair(region, group); // not executed if securityGroup was in use
-                  logger.debug("<< deleted incidentalResources(%s @ %s)", region, group);
-                  return true;
-               } catch (IllegalStateException e) {
-                  logger.debug("<< inUse incidentalResources(%s @ %s)", region, group);
-                  return false;
-               }
+      // TODO: this could be moved to a config module, also the narrative above made more concise
+      retry(new Predicate<RegionAndName>() {
+         public boolean apply(RegionAndName input) {
+            try {
+               logger.debug(">> deleting incidentalResources(%s)", input);
+               deleteSecurityGroup(input.getRegion(), input.getName());
+               deleteKeyPair(input.getRegion(), input.getName()); // not executed if securityGroup was in use
+               logger.debug("<< deleted incidentalResources(%s)", input);
+               return true;
+            } catch (IllegalStateException e) {
+               logger.debug("<< inUse incidentalResources(%s @ %s)", input);
+               return false;
             }
-         }, (Void)null, maxAttempts);
+         }
+      }, SECONDS.toMillis(3), 50, 1000, MILLISECONDS).apply(new RegionAndName(region, group));
    }
 
    /**

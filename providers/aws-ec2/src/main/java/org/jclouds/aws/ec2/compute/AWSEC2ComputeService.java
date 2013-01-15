@@ -18,7 +18,9 @@
  */
 package org.jclouds.aws.ec2.compute;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Strings.emptyToNull;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_RUNNING;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_SUSPENDED;
 import static org.jclouds.compute.config.ComputeServiceProperties.TIMEOUT_NODE_TERMINATED;
@@ -27,7 +29,6 @@ import static org.jclouds.ec2.reference.EC2Constants.PROPERTY_EC2_GENERATE_INSTA
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Inject;
@@ -66,13 +67,13 @@ import org.jclouds.ec2.compute.EC2ComputeService;
 import org.jclouds.ec2.compute.domain.RegionAndName;
 import org.jclouds.ec2.domain.KeyPair;
 import org.jclouds.scriptbuilder.functions.InitAdminAccess;
-import org.jclouds.util.Preconditions2;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.ListeningExecutorService;
 
 /**
  * @author Adrian Cole
@@ -99,7 +100,7 @@ public class AWSEC2ComputeService extends EC2ComputeService {
          InitializeRunScriptOnNodeOrPlaceInBadMap.Factory initScriptRunnerFactory,
          RunScriptOnNode.Factory runScriptOnNodeFactory, InitAdminAccess initAdminAccess,
          PersistNodeCredentials persistNodeCredentials, Timeouts timeouts,
-         @Named(Constants.PROPERTY_USER_THREADS) ExecutorService executor, AWSEC2Client client,
+         @Named(Constants.PROPERTY_USER_THREADS) ListeningExecutorService userExecutor, AWSEC2Client client,
          ConcurrentMap<RegionAndName, KeyPair> credentialsMap,
          @Named("SECURITY") LoadingCache<RegionAndName, String> securityGroupMap,
          @Named("PLACEMENT") LoadingCache<RegionAndName, String> placementGroupMap,
@@ -110,7 +111,7 @@ public class AWSEC2ComputeService extends EC2ComputeService {
             getNodeMetadataStrategy, runNodesAndAddToSetStrategy, rebootNodeStrategy, destroyNodeStrategy,
             startNodeStrategy, stopNodeStrategy, templateBuilderProvider, templateOptionsProvider, nodeRunning,
             nodeTerminated, nodeSuspended, initScriptRunnerFactory, runScriptOnNodeFactory, initAdminAccess,
-            persistNodeCredentials, timeouts, executor, client, credentialsMap, securityGroupMap, imageExtension,
+            persistNodeCredentials, timeouts, userExecutor, client, credentialsMap, securityGroupMap, imageExtension,
             namingConvention, generateInstanceNames);
       this.client = client;
       this.placementGroupMap = placementGroupMap;
@@ -119,7 +120,7 @@ public class AWSEC2ComputeService extends EC2ComputeService {
 
    @VisibleForTesting
    void deletePlacementGroup(String region, String group) {
-      Preconditions2.checkNotEmpty(group, "group");
+      checkNotNull(emptyToNull(group), "group must be defined");
       // placementGroupName must be unique within an account per
       // http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using_cluster_computing.html
       String placementGroup = String.format("jclouds#%s#%s", group, region);

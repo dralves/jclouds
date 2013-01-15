@@ -53,6 +53,7 @@ import org.jclouds.logging.Logger;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
@@ -81,7 +82,7 @@ public class AWSEC2CreateNodesInGroupThenAddToSet extends EC2CreateNodesInGroupT
          CreateKeyPairPlacementAndSecurityGroupsAsNeededAndReturnRunOptions createKeyPairAndSecurityGroupsAsNeededAndReturncustomize,
          PresentSpotRequestsAndInstances instancePresent,
          Function<RunningInstance, NodeMetadata> runningInstanceToNodeMetadata,
-         LoadingCache<RunningInstance, LoginCredentials> instanceToCredentials,
+         LoadingCache<RunningInstance, Optional<LoginCredentials>> instanceToCredentials,
          Map<String, Credentials> credentialStore, ComputeUtils utils,
          SpotInstanceRequestToAWSRunningInstance spotConverter) {
       super(client, elasticIpCache, nodeRunning, createKeyPairAndSecurityGroupsAsNeededAndReturncustomize,
@@ -95,9 +96,11 @@ public class AWSEC2CreateNodesInGroupThenAddToSet extends EC2CreateNodesInGroupT
             int count, Template template, RunInstancesOptions instanceOptions) {
       Float spotPrice = getSpotPriceOrNull(template.getOptions());
       if (spotPrice != null) {
+         AWSEC2TemplateOptions awsOptions = AWSEC2TemplateOptions.class.cast(template.getOptions());
          LaunchSpecification spec = AWSRunInstancesOptions.class.cast(instanceOptions).getLaunchSpecificationBuilder()
-                  .imageId(template.getImage().getProviderId()).availabilityZone(zone).build();
-         RequestSpotInstancesOptions options = AWSEC2TemplateOptions.class.cast(template.getOptions()).getSpotOptions();
+               .imageId(template.getImage().getProviderId()).availabilityZone(zone).subnetId(awsOptions.getSubnetId())
+               .build();
+         RequestSpotInstancesOptions options = awsOptions.getSpotOptions();
          if (logger.isDebugEnabled())
             logger.debug(">> requesting %d spot instances region(%s) price(%f) spec(%s) options(%s)", count, region,
                      spotPrice, spec, options);

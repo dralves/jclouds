@@ -19,6 +19,11 @@
 package org.jclouds.rest.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static com.google.inject.name.Names.named;
+import static org.jclouds.Constants.PROPERTY_IO_WORKER_THREADS;
+import static org.jclouds.Constants.PROPERTY_MAX_RETRIES;
+import static org.jclouds.Constants.PROPERTY_USER_THREADS;
 import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
@@ -29,7 +34,6 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -43,10 +47,8 @@ import org.custommonkey.xmlunit.DifferenceConstants;
 import org.custommonkey.xmlunit.DifferenceListener;
 import org.custommonkey.xmlunit.NodeDetail;
 import org.custommonkey.xmlunit.XMLUnit;
-import org.jclouds.Constants;
 import org.jclouds.ContextBuilder;
 import org.jclouds.apis.ApiMetadata;
-import org.jclouds.concurrent.MoreExecutors;
 import org.jclouds.concurrent.SingleThreaded;
 import org.jclouds.concurrent.config.ConfiguresExecutorService;
 import org.jclouds.date.internal.DateServiceDateCodecFactory;
@@ -81,6 +83,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.InputSupplier;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.inject.AbstractModule;
@@ -88,7 +91,6 @@ import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
-import com.google.inject.name.Names;
 
 /**
  * 
@@ -193,7 +195,7 @@ public abstract class BaseRestApiExpectTest<S> {
       @Inject
       public ExpectHttpCommandExecutorService(Function<HttpRequest, HttpResponse> fn, HttpUtils utils,
                ContentMetadataCodec contentMetadataCodec,
-               @Named(Constants.PROPERTY_IO_WORKER_THREADS) ExecutorService ioExecutor,
+               @Named(PROPERTY_IO_WORKER_THREADS) ListeningExecutorService ioExecutor,
                IOExceptionRetryHandler ioRetryHandler, DelegatingRetryHandler retryHandler,
                DelegatingErrorHandler errorHandler, HttpWire wire) {
          super(utils, contentMetadataCodec, ioExecutor, retryHandler, ioRetryHandler, errorHandler, wire);
@@ -228,10 +230,8 @@ public abstract class BaseRestApiExpectTest<S> {
 
       @Override
       public void configure() {
-         bind(ExecutorService.class).annotatedWith(Names.named(Constants.PROPERTY_USER_THREADS)).toInstance(
-                  MoreExecutors.sameThreadExecutor());
-         bind(ExecutorService.class).annotatedWith(Names.named(Constants.PROPERTY_IO_WORKER_THREADS)).toInstance(
-                  MoreExecutors.sameThreadExecutor());
+         bind(ListeningExecutorService.class).annotatedWith(named(PROPERTY_USER_THREADS)).toInstance(sameThreadExecutor());
+         bind(ListeningExecutorService.class).annotatedWith(named(PROPERTY_IO_WORKER_THREADS)).toInstance(sameThreadExecutor());
          bind(new TypeLiteral<Function<HttpRequest, HttpResponse>>() {
          }).toInstance(fn);
          bind(HttpCommandExecutorService.class).to(ExpectHttpCommandExecutorService.class);
@@ -564,7 +564,7 @@ public abstract class BaseRestApiExpectTest<S> {
     */
    protected Properties setupProperties() {
       Properties props = new Properties();
-      props.put(Constants.PROPERTY_MAX_RETRIES, 1);
+      props.put(PROPERTY_MAX_RETRIES, 1);
       return props;
    }
 }

@@ -28,7 +28,8 @@ import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static org.jclouds.Constants.PROPERTY_SESSION_INTERVAL;
-import static org.jclouds.rest.config.BinderUtils.bindClientAndAsyncClient;
+import static org.jclouds.rest.config.BinderUtils.bindHttpApi;
+import static org.jclouds.util.Predicates2.retry;
 import static org.jclouds.vcloud.reference.VCloudConstants.PROPERTY_VCLOUD_DEFAULT_FENCEMODE;
 import static org.jclouds.vcloud.reference.VCloudConstants.PROPERTY_VCLOUD_TIMEOUT_TASK_COMPLETED;
 
@@ -52,7 +53,6 @@ import org.jclouds.http.annotation.ServerError;
 import org.jclouds.location.suppliers.ImplicitLocationSupplier;
 import org.jclouds.location.suppliers.LocationsSupplier;
 import org.jclouds.ovf.Envelope;
-import org.jclouds.predicates.RetryablePredicate;
 import org.jclouds.rest.AuthorizationException;
 import org.jclouds.rest.ConfiguresRestClient;
 import org.jclouds.rest.annotations.ApiVersion;
@@ -206,8 +206,8 @@ public class VCloudRestClientModule extends RestClientModule<VCloudClient, VClou
       bind(new TypeLiteral<Function<VAppTemplate, Envelope>>() {
       }).to(new TypeLiteral<ValidateVAppTemplateAndReturnEnvelopeOrThrowIllegalArgumentException>() {
       });
-      bindClientAndAsyncClient(binder(), VCloudVersionsClient.class, VCloudVersionsAsyncClient.class);
-      bindClientAndAsyncClient(binder(), VCloudLoginClient.class, VCloudLoginAsyncClient.class);
+      bindHttpApi(binder(), VCloudVersionsClient.class, VCloudVersionsAsyncClient.class);
+      bindHttpApi(binder(), VCloudLoginClient.class, VCloudLoginAsyncClient.class);
    }
 
    protected void bindCacheLoaders() {
@@ -443,7 +443,7 @@ public class VCloudRestClientModule extends RestClientModule<VCloudClient, VClou
    @Singleton
    protected Predicate<URI> successTester(Injector injector,
             @Named(PROPERTY_VCLOUD_TIMEOUT_TASK_COMPLETED) long completed) {
-      return new RetryablePredicate<URI>(injector.getInstance(TaskSuccess.class), completed);
+      return retry(injector.getInstance(TaskSuccess.class), completed);
    }
 
    @Provides
