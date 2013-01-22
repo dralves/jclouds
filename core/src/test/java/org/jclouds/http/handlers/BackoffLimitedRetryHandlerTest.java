@@ -17,7 +17,7 @@
  * under the License.
  */
 package org.jclouds.http.handlers;
-
+import static org.jclouds.reflect.Reflection2.method;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -30,13 +30,12 @@ import org.jclouds.http.HttpCommand;
 import org.jclouds.http.HttpResponse;
 import org.jclouds.http.IntegrationTestAsyncClient;
 import org.jclouds.io.Payloads;
+import org.jclouds.reflect.Invocation;
 import org.jclouds.rest.internal.RestAnnotationProcessor;
 import org.testng.annotations.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.Invokable;
-import com.google.inject.Key;
-import com.google.inject.TypeLiteral;
 
 @Test(groups = "unit", testName = "BackoffLimitedRetryHandlerTest")
 public class BackoffLimitedRetryHandlerTest {
@@ -123,13 +122,13 @@ public class BackoffLimitedRetryHandlerTest {
       assertEquals(response.getPayload().getInput().read(), -1);
    }
 
-   private final RestAnnotationProcessor<IntegrationTestAsyncClient> processor = BaseJettyTest.newBuilder(8100, new Properties()).buildInjector()
-         .getInstance(Key.get(new TypeLiteral<RestAnnotationProcessor<IntegrationTestAsyncClient>>(){}));
+   private final RestAnnotationProcessor processor = BaseJettyTest.newBuilder(8100, new Properties()).buildInjector()
+         .getInstance(RestAnnotationProcessor.class);
 
    private HttpCommand createCommand() throws SecurityException, NoSuchMethodException {
-      Invokable<?, Object> method = Invokable.from(IntegrationTestAsyncClient.class.getMethod("download", String.class));
+      Invokable<IntegrationTestAsyncClient, String> method = method(IntegrationTestAsyncClient.class, "download", String.class);
 
-      return new HttpCommand(processor.createRequest(method, ImmutableList.<Object> of("1")));
+      return new HttpCommand(processor.apply(Invocation.create(method, ImmutableList.<Object> of("1"))));
    }
 
    @Test

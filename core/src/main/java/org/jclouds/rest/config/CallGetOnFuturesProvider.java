@@ -18,6 +18,7 @@
  */
 package org.jclouds.rest.config;
 
+
 import java.lang.reflect.Proxy;
 
 import javax.inject.Inject;
@@ -28,7 +29,6 @@ import org.jclouds.rest.internal.InvokeAndCallGetOnFutures;
 
 import com.google.common.cache.Cache;
 import com.google.common.reflect.Invokable;
-import com.google.common.reflect.TypeToken;
 import com.google.inject.Provider;
 
 /**
@@ -38,15 +38,15 @@ import com.google.inject.Provider;
 public class CallGetOnFuturesProvider<S, A> implements Provider<S> {
 
    private final Class<? super S> apiType;
-   private final DelegatesToInvocationFunction<S, A, InvokeAndCallGetOnFutures<A>> syncInvoker;
+   private final DelegatesToInvocationFunction<S, InvokeAndCallGetOnFutures<A>> syncInvoker;
 
    @Inject
    private CallGetOnFuturesProvider(Cache<Invokable<?, ?>, Invokable<?, ?>> invokables,
-         DelegatesToInvocationFunction<S, A, InvokeAndCallGetOnFutures<A>> syncInvoker, Class<S> apiType,
+         DelegatesToInvocationFunction<S, InvokeAndCallGetOnFutures<A>> syncInvoker, Class<S> apiType,
          Class<A> asyncApiType) {
       this.syncInvoker = syncInvoker;
       this.apiType = apiType;
-      RestModule.putInvokables(TypeToken.of(apiType), TypeToken.of(asyncApiType), invokables);
+      RestModule.putInvokables(apiType, asyncApiType, invokables);
    }
 
    @SuppressWarnings("unchecked")

@@ -21,6 +21,8 @@ package org.jclouds.googlecompute;
 import com.google.common.annotations.Beta;
 import org.jclouds.googlecompute.features.DiskApi;
 import org.jclouds.googlecompute.features.FirewallApi;
+import org.jclouds.googlecompute.features.ImageApi;
+import org.jclouds.googlecompute.features.InstanceApi;
 import org.jclouds.googlecompute.features.KernelApi;
 import org.jclouds.googlecompute.features.MachineTypeApi;
 import org.jclouds.googlecompute.features.NetworkApi;
@@ -31,6 +33,7 @@ import org.jclouds.rest.annotations.Delegate;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+
 
 /**
  * Provides synchronous access to GoogleCompute.
@@ -60,6 +63,24 @@ public interface GoogleComputeApi {
    @Delegate
    @Path("/projects/{project}")
    FirewallApi getFirewallApiForProject(@PathParam("project") String projectName);
+
+   /**
+    * Provides synchronous access to Image features
+    *
+    * @param projectName the name of the project
+    */
+   @Delegate
+   @Path("/projects/{project}")
+   ImageApi getImageApiForProject(@PathParam("project") String projectName);
+
+   /**
+    * Provides synchronous access to Instance features
+    *
+    * @param projectName the name of the project
+    */
+   @Delegate
+   @Path("/projects/{project}")
+   InstanceApi getInstanceApiForProject(@PathParam("project") String projectName);
 
    /**
     * Provides synchronous access to Kernel features

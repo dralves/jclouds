@@ -19,11 +19,14 @@
 
 package org.jclouds.abiquo.rest.internal;
 
+import static org.jclouds.reflect.Reflection2.method;
+
 import java.io.IOException;
 
 import org.jclouds.Fallbacks.NullOnNotFoundOr404;
 import org.jclouds.abiquo.features.BaseAbiquoAsyncApiTest;
 import org.jclouds.functions.IdentityFunction;
+import org.jclouds.reflect.Invocation;
 import org.jclouds.rest.internal.GeneratedHttpRequest;
 import org.testng.annotations.Test;
 
@@ -43,8 +46,8 @@ public class AbiquoHttpAsyncClientTest extends BaseAbiquoAsyncApiTest<AbiquoHttp
       RESTLink link = new RESTLink("edit", "http://foo/bar");
       link.setType(DatacentersDto.BASE_MEDIA_TYPE);
 
-      Invokable<?, ?> method = Invokable.from(AbiquoHttpAsyncClient.class.getMethod("get", RESTLink.class));
-      GeneratedHttpRequest request = processor.createRequest(method, ImmutableList.<Object> of(link));
+      Invokable<?, ?> method = method(AbiquoHttpAsyncClient.class, "get", RESTLink.class);
+      GeneratedHttpRequest request = processor.apply(Invocation.create(method, ImmutableList.<Object> of(link)));
 
       assertRequestLineEquals(request, "GET http://foo/bar HTTP/1.1");
       assertNonPayloadHeadersEqual(request, "Accept: " + DatacentersDto.BASE_MEDIA_TYPE + "\n");

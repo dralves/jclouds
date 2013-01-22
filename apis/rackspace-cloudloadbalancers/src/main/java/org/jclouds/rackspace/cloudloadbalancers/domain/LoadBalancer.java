@@ -41,7 +41,7 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
    private final String region;
    private final int id;
    private final Status status;
-   private final Set<VirtualIP> virtualIPs;
+   private final Set<VirtualIPWithId> virtualIPs;
    private final String clusterName;
    private final Date created;
    private final Date updated;
@@ -50,17 +50,17 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
    private final SSLTermination sslTermination;
    private final SourceAddresses sourceAddresses;
    private final Set<AccessRuleWithId> accessRules;
+   private final Metadata metadata;
 
    public LoadBalancer(String region, int id, String name, String protocol, @Nullable Integer port, Set<Node> nodes,
          @Nullable Integer timeout, @Nullable Boolean halfClosed, @Nullable Algorithm algorithm, Status status,
-         Set<VirtualIP> virtualIPs, @Nullable Map<String, SessionPersistenceType> sessionPersistenceType,
+         Set<VirtualIPWithId> virtualIPs, @Nullable Map<String, SessionPersistenceType> sessionPersistenceType,
          String clusterName, Date created, Date updated, @Nullable Map<String, Boolean> connectionLogging,
          @Nullable ConnectionThrottle connectionThrottle, boolean contentCaching, int nodeCount,
          @Nullable HealthMonitor healthMonitor, @Nullable SSLTermination sslTermination,
-         SourceAddresses sourceAddresses, Set<AccessRuleWithId> accessRules,
-         @Nullable Set<Metadata> metadata) {
+         SourceAddresses sourceAddresses, Set<AccessRuleWithId> accessRules, Metadata metadata) {
       super(name, protocol, port, nodes, algorithm, timeout, halfClosed, sessionPersistenceType, connectionLogging,
-            connectionThrottle, healthMonitor, metadata);
+            connectionThrottle, healthMonitor);
       this.region = checkNotNull(region, "region");
       checkArgument(id != -1, "id must be specified");
       this.id = id;
@@ -74,6 +74,7 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
       this.sslTermination = sslTermination;
       this.sourceAddresses = sourceAddresses;
       this.accessRules = accessRules == null ? ImmutableSet.<AccessRuleWithId> of() : ImmutableSet.copyOf(accessRules);
+      this.metadata = metadata == null ? new Metadata() : metadata;
    }
 
    public String getRegion() {
@@ -94,7 +95,7 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
    /**
     * @see VirtualIP
     */
-   public Set<VirtualIP> getVirtualIPs() {
+   public Set<VirtualIPWithId> getVirtualIPs() {
       return virtualIPs;
    }
 
@@ -153,8 +154,18 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
       return sourceAddresses;
    }
 
+   /**
+    * @see AccessRule
+    */
    public Set<AccessRuleWithId> getAccessRules() {
       return accessRules;
+   }
+
+   /**
+    * @see Metadata
+    */
+   public Metadata getMetadata() {
+      return metadata;
    }
 
    protected ToStringHelper string() {
@@ -251,7 +262,7 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
       private String region;
       private int id = -1;
       private Status status;
-      private Set<VirtualIP> virtualIPs = ImmutableSet.<VirtualIP> of();
+      private Set<VirtualIPWithId> virtualIPs = ImmutableSet.<VirtualIPWithId> of();
       private String clusterName;
       private Date created;
       private Date updated;
@@ -260,6 +271,7 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
       private SSLTermination sslTermination;
       private SourceAddresses sourceAddresses;
       private Set<AccessRuleWithId> accessRules;
+      private Metadata metadata;
 
       public Builder region(String region) {
          this.region = region;
@@ -276,8 +288,8 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
          return this;
       }
 
-      public Builder virtualIPs(Iterable<VirtualIP> virtualIPs) {
-         this.virtualIPs = ImmutableSet.<VirtualIP> copyOf(checkNotNull(virtualIPs, "virtualIPs"));
+      public Builder virtualIPs(Iterable<VirtualIPWithId> virtualIPs) {
+         this.virtualIPs = ImmutableSet.<VirtualIPWithId> copyOf(checkNotNull(virtualIPs, "virtualIPs"));
          return this;
       }
 
@@ -324,6 +336,10 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
          return this;
       }
 
+      public Builder metadata(Metadata metadata) {
+         this.metadata = checkNotNull(metadata, "metadata");
+         return this;
+      }
 
       public LoadBalancer build() {
          return new LoadBalancer(region, id, name, protocol, port, nodes, timeout, halfClosed, algorithm, status,
@@ -344,8 +360,8 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
        * {@inheritDoc}
        */
       @Override
-      public Builder node(Node nodes) {
-         this.nodes.add(checkNotNull(nodes, "nodes"));
+      public Builder node(Node node) {
+         this.nodes.add(checkNotNull(node, "nodes"));
          return this;
       }
 
@@ -427,14 +443,6 @@ public class LoadBalancer extends BaseLoadBalancer<Node, LoadBalancer> {
       @Override
       public Builder healthMonitor(@Nullable HealthMonitor healthMonitor) {
          return Builder.class.cast(super.healthMonitor(healthMonitor));
-      }
-
-      /**
-       * {@inheritDoc}
-       */
-      @Override
-      public Builder metadata(@Nullable Set<Metadata> metadata) {
-         return Builder.class.cast(super.metadata(metadata));
       }
 
       @Override

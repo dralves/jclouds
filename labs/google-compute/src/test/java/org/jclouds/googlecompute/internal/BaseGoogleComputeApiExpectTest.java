@@ -20,9 +20,17 @@ package org.jclouds.googlecompute.internal;
 
 import org.jclouds.googlecompute.GoogleComputeApi;
 
+import java.util.Properties;
+
 /**
  * @author Adrian Cole
  */
 public class BaseGoogleComputeApiExpectTest extends BaseGoogleComputeExpectTest<GoogleComputeApi> {
 
+   @Override
+   protected Properties setupProperties() {
+      Properties properties = super.setupProperties();
+      properties.put("google-compute.identity", "myproject");
+      return properties;
+   }
 }

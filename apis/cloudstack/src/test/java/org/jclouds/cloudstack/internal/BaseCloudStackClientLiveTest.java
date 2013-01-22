@@ -21,6 +21,7 @@ package org.jclouds.cloudstack.internal;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.get;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.jclouds.reflect.Reflection2.typeToken;
 import static org.jclouds.util.Predicates2.retry;
 import static org.testng.Assert.assertEquals;
 
@@ -53,7 +54,7 @@ import org.jclouds.cloudstack.strategy.BlockUntilJobCompletesAndReturnResult;
 import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.domain.ExecResponse;
 import org.jclouds.compute.internal.BaseGenericComputeServiceContextLiveTest;
-import org.jclouds.predicates.InetSocketAddressConnect;
+import org.jclouds.predicates.SocketOpen;
 import org.jclouds.rest.RestContext;
 import org.jclouds.ssh.SshClient;
 import org.jclouds.sshj.config.SshjSshClientModule;
@@ -85,7 +86,7 @@ public class BaseCloudStackClientLiveTest extends BaseGenericComputeServiceConte
    
    @Override
    protected TypeToken<CloudStackContext> viewType() {
-      return TypeToken.of(CloudStackContext.class);
+      return typeToken(CloudStackContext.class);
    }
    
    @Override
@@ -223,7 +224,8 @@ public class BaseCloudStackClientLiveTest extends BaseGenericComputeServiceConte
 
       injector = cloudStackContext.utils().injector();
       sshFactory = injector.getInstance(SshClient.Factory.class);
-      socketTester = retry(new InetSocketAddressConnect(), 180, 1, 1, SECONDS);
+      SocketOpen socketOpen = context.utils().injector().getInstance(SocketOpen.class);
+      socketTester = retry(socketOpen, 180, 1, 1, SECONDS);
       injector.injectMembers(socketTester);
 
       jobComplete = retry(new JobComplete(client), 1200, 1, 5, SECONDS);

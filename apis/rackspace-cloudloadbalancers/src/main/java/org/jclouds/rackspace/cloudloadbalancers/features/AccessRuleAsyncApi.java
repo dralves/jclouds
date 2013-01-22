@@ -18,6 +18,7 @@
  */
 package org.jclouds.rackspace.cloudloadbalancers.features;
 
+import javax.inject.Named;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -28,7 +29,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.jclouds.Fallbacks.EmptyPagedIterableOnNotFoundOr404;
-import org.jclouds.Fallbacks.NullOnNotFoundOr404;
+import org.jclouds.Fallbacks.FalseOnNotFoundOr404;
 import org.jclouds.Fallbacks.VoidOnNotFoundOr404;
 import org.jclouds.openstack.keystone.v2_0.filters.AuthenticateRequest;
 import org.jclouds.rackspace.cloudloadbalancers.domain.AccessRule;
@@ -53,15 +54,17 @@ public interface AccessRuleAsyncApi {
    /**
     * @see AccessRuleApi#create(Iterable)
     */
+   @Named("accessrule:create")
    @POST
    @Consumes(MediaType.APPLICATION_JSON)
-   @Fallback(NullOnNotFoundOr404.class)
+   @Fallback(VoidOnNotFoundOr404.class)
    @Path("/accesslist")
-   ListenableFuture<Void> create(@WrapWith("accessList") Iterable<AccessRule> accessList);
+   ListenableFuture<Void> create(@WrapWith("accessList") Iterable<AccessRule> accessRules);
 
    /**
     * @see AccessRuleApi#list()
     */
+   @Named("accessrule:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Fallback(EmptyPagedIterableOnNotFoundOr404.class)
@@ -72,27 +75,30 @@ public interface AccessRuleAsyncApi {
    /**
     * @see AccessRuleApi#remove(int)
     */
+   @Named("accessrule:remove")
    @DELETE
-   @Fallback(VoidOnNotFoundOr404.class)
+   @Fallback(FalseOnNotFoundOr404.class)
    @Path("/accesslist/{id}")
    @Consumes("*/*")
-   ListenableFuture<Void> remove(@PathParam("id") int id);
+   ListenableFuture<Boolean> remove(@PathParam("id") int id);
 
    /**
     * @see AccessRuleApi#remove(Iterable)
     */
+   @Named("accessrule:remove")
    @DELETE
-   @Fallback(VoidOnNotFoundOr404.class)
+   @Fallback(FalseOnNotFoundOr404.class)
    @Path("/accesslist")
    @Consumes("*/*")
-   ListenableFuture<Void> remove(@QueryParam("id") Iterable<Integer> ids);
+   ListenableFuture<Boolean> remove(@QueryParam("id") Iterable<Integer> ids);
 
    /**
     * @see AccessRuleApi#removeAll()
     */
+   @Named("accessrule:remove")
    @DELETE
-   @Fallback(VoidOnNotFoundOr404.class)
+   @Fallback(FalseOnNotFoundOr404.class)
    @Path("/accesslist")
    @Consumes("*/*")
-   ListenableFuture<Void> removeAll();
+   ListenableFuture<Boolean> removeAll();
 }

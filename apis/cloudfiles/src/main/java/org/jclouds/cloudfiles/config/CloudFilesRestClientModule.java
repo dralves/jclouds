@@ -18,6 +18,8 @@
  */
 package org.jclouds.cloudfiles.config;
 
+import static org.jclouds.reflect.Reflection2.typeToken;
+
 import java.net.URI;
 import java.util.Map;
 
@@ -38,7 +40,6 @@ import org.jclouds.rest.ConfiguresRestClient;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.reflect.TypeToken;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
@@ -49,7 +50,7 @@ import com.google.inject.Scopes;
 @ConfiguresRestClient
 public class CloudFilesRestClientModule extends SwiftRestClientModule<CloudFilesClient, CloudFilesAsyncClient> {
    public CloudFilesRestClientModule() {
-      super(TypeToken.of(CloudFilesClient.class), TypeToken.of(CloudFilesAsyncClient.class), ImmutableMap
+      super(typeToken(CloudFilesClient.class), typeToken(CloudFilesAsyncClient.class), ImmutableMap
                .<Class<?>, Class<?>> of());
    }
 

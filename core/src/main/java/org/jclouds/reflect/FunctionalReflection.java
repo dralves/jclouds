@@ -24,6 +24,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.collect.Iterables.all;
+import static org.jclouds.reflect.Reflection2.method;
+import static org.jclouds.reflect.Reflection2.typeToken;
 import static org.jclouds.util.Throwables2.propagateIfPossible;
 
 import java.lang.reflect.Method;
@@ -83,8 +85,7 @@ public final class FunctionalReflection {
 
    public static <T> T newProxy(Class<T> enclosingType, Function<Invocation, Object> invocationFunction) {
       checkNotNull(invocationFunction, "invocationFunction");
-      return newProxy(enclosingType,
-            new FunctionalInvocationHandler<T>(TypeToken.of(enclosingType), invocationFunction));
+      return newProxy(enclosingType, new FunctionalInvocationHandler<T>(typeToken(enclosingType), invocationFunction));
    }
 
    @SuppressWarnings("unchecked")
@@ -112,8 +113,7 @@ public final class FunctionalReflection {
             args = ImmutableList.copyOf(args);
          else
             args = Collections.unmodifiableList(args);
-         Invokable<?, Object> invokable = Invokable.from(invoked);
-         // not yet support the proxy arg
+         Invokable<T, Object> invokable = method(enclosingType, invoked);
          Invocation invocation = Invocation.create(invokable, args);
          try {
             return invocationFunction.apply(invocation);

@@ -18,7 +18,7 @@
  */
 
 package org.jclouds.abiquo.binders.cloud;
-
+import static org.jclouds.reflect.Reflection2.method;
 import static org.testng.Assert.assertEquals;
 
 import java.net.URI;
@@ -62,9 +62,9 @@ public class BindMoveVolumeToPathTest {
    }
 
    private static GeneratedHttpRequest generatedHttpRequest() throws SecurityException, NoSuchMethodException {
-      Invokable<?, ?> withEndpointLink = Invokable.from(CloudAsyncApi.class.getMethod("moveVolume", VolumeManagementDto.class,
-            VirtualDatacenterDto.class));
-      return GeneratedHttpRequest.builder(CloudAsyncApi.class)
+      Invokable<?, ?> withEndpointLink = method(CloudAsyncApi.class, "moveVolume", VolumeManagementDto.class,
+            VirtualDatacenterDto.class);
+      return GeneratedHttpRequest.builder()
             .invocation(Invocation.create(withEndpointLink, ImmutableList.<Object> of(CloudResources.volumePut(), CloudResources.virtualDatacenterPut())))
             .method(HttpMethod.POST).endpoint(URI.create("http://localhost")).build();
    }

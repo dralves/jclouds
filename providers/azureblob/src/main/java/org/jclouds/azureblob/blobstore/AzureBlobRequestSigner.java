@@ -20,6 +20,7 @@ package org.jclouds.azureblob.blobstore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.jclouds.blobstore.util.BlobStoreUtils.cleanRequest;
+import static org.jclouds.reflect.Reflection2.method;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -44,7 +45,7 @@ import com.google.common.reflect.Invokable;
  */
 @Singleton
 public class AzureBlobRequestSigner implements BlobRequestSigner {
-   private final RestAnnotationProcessor<AzureBlobAsyncClient> processor;
+   private final RestAnnotationProcessor processor;
    private final BlobToAzureBlob blobToBlob;
    private final BlobToHttpGetOptions blob2HttpGetOptions;
 
@@ -53,17 +54,14 @@ public class AzureBlobRequestSigner implements BlobRequestSigner {
    private final Invokable<?, ?> createMethod;
 
    @Inject
-   public AzureBlobRequestSigner(RestAnnotationProcessor<AzureBlobAsyncClient> processor, BlobToAzureBlob blobToBlob,
+   public AzureBlobRequestSigner(RestAnnotationProcessor processor, BlobToAzureBlob blobToBlob,
          BlobToHttpGetOptions blob2HttpGetOptions) throws SecurityException, NoSuchMethodException {
       this.processor = checkNotNull(processor, "processor");
       this.blobToBlob = checkNotNull(blobToBlob, "blobToBlob");
       this.blob2HttpGetOptions = checkNotNull(blob2HttpGetOptions, "blob2HttpGetOptions");
-      this.getMethod = Invokable.from(AzureBlobAsyncClient.class.getMethod("getBlob", String.class, String.class,
-            GetOptions[].class));
-      this.deleteMethod = Invokable
-            .from(AzureBlobAsyncClient.class.getMethod("deleteBlob", String.class, String.class));
-      this.createMethod = Invokable
-            .from(AzureBlobAsyncClient.class.getMethod("putBlob", String.class, AzureBlob.class));
+      this.getMethod = method(AzureBlobAsyncClient.class, "getBlob", String.class, String.class, GetOptions[].class);
+      this.deleteMethod = method(AzureBlobAsyncClient.class, "deleteBlob", String.class, String.class);
+      this.createMethod = method(AzureBlobAsyncClient.class, "putBlob", String.class, AzureBlob.class);
    }
 
    @Override
