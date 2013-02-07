@@ -24,6 +24,7 @@ import com.google.common.collect.Lists;
 import org.jclouds.collect.PagedIterable;
 import org.jclouds.googlecompute.domain.Firewall;
 import org.jclouds.googlecompute.internal.BaseGoogleComputeApiLiveTest;
+import org.jclouds.googlecompute.options.FirewallOptions;
 import org.jclouds.googlecompute.options.ListOptions;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -43,15 +44,15 @@ public class FirewallApiLiveTest extends BaseGoogleComputeApiLiveTest {
    private static final String FIREWALL_NAME = "firewall-api-live-test-firewall";
    private static final int TIME_WAIT = 30;
 
-   private Firewall firewall;
+   private FirewallOptions firewall;
 
    @BeforeClass(groups = {"integration", "live"})
    public void setupContext() {
       super.setupContext();
-      firewall = Firewall.builder()
+      firewall = FirewallOptions.builder()
               .name(FIREWALL_NAME)
               .network(getDefaultNetworkUrl(getUserProject()))
-              .addAllowed(
+              .addAllowedRule(
                       Firewall.Rule.builder()
                               .IPProtocol(IPProtocol.TCP)
                               .addPort(22).build())
@@ -77,7 +78,7 @@ public class FirewallApiLiveTest extends BaseGoogleComputeApiLiveTest {
 
       // replace 22 with 23
       firewall = firewall.toBuilder()
-              .allowed(ImmutableSet.of(
+              .allowedRules(ImmutableSet.of(
                       Firewall.Rule.builder()
                               .IPProtocol(IPProtocol.TCP)
                               .addPort(23)
@@ -93,7 +94,7 @@ public class FirewallApiLiveTest extends BaseGoogleComputeApiLiveTest {
 
       // readd 22 with "patch" semantics
       firewall = firewall.toBuilder()
-              .allowed(ImmutableSet.of(
+              .allowedRules(ImmutableSet.of(
                       Firewall.Rule.builder()
                               .IPProtocol(IPProtocol.TCP)
                               .addPort(22)
@@ -128,7 +129,7 @@ public class FirewallApiLiveTest extends BaseGoogleComputeApiLiveTest {
 
       assertFirewallEquals(getOnlyElement(firewallsAsList),
               firewall.toBuilder()
-                      .addAllowed(Firewall.Rule.builder()
+                      .addAllowedRule(Firewall.Rule.builder()
                               .IPProtocol(IPProtocol.TCP)
                               .addPort(23)
                               .build())
@@ -142,7 +143,7 @@ public class FirewallApiLiveTest extends BaseGoogleComputeApiLiveTest {
       assertOperationDoneSucessfully(api().delete(FIREWALL_NAME), TIME_WAIT);
    }
 
-   private void assertFirewallEquals(Firewall result, Firewall expected) {
+   private void assertFirewallEquals(Firewall result, FirewallOptions expected) {
       assertEquals(result.getName(), expected.getName());
       assertEquals(getOnlyElement(result.getSourceRanges()), getOnlyElement(expected.getSourceRanges()));
       assertEquals(getOnlyElement(result.getSourceTags()), getOnlyElement(expected.getSourceTags()));

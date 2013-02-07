@@ -84,14 +84,14 @@ public interface NetworkApi {
    ListPage<Network> listAtMarker(@Nullable String marker);
 
    /**
-    * Retrieves the list of persistent network resources contained within the specified project.
-    * By default the list as a maximum size of 100, if no options are provided or ListOptions#getMaxResults() has not
+    * Retrieves the LIST_MACHINE_TYPES_REQUEST of persistent network resources contained within the specified project.
+    * By default the LIST_MACHINE_TYPES_REQUEST as a maximum size of 100, if no options are provided or ListOptions#getMaxResults() has not
     * been set.
     *
     *
-    * @param marker      marks the beginning of the next list page
+    * @param marker      marks the beginning of the next LIST_MACHINE_TYPES_REQUEST page
     * @param listOptions listing options
-    * @return a page of the list
+    * @return a page of the LIST_MACHINE_TYPES_REQUEST
     * @see ListOptions
     * @see org.jclouds.googlecompute.domain.ListPage
     */
@@ -103,7 +103,7 @@ public interface NetworkApi {
    PagedIterable<Network> list();
 
    /**
-    * A paged version of NetworkApi#list()
+    * A paged version of NetworkApi#LIST_MACHINE_TYPES_REQUEST()
     *
     * @return a Paged, Fluent Iterable that is able to fetch additional pages when required
     * @see PagedIterable

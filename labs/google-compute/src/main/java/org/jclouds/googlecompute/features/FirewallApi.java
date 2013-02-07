@@ -23,6 +23,7 @@ import org.jclouds.collect.PagedIterable;
 import org.jclouds.googlecompute.domain.Firewall;
 import org.jclouds.googlecompute.domain.ListPage;
 import org.jclouds.googlecompute.domain.Operation;
+import org.jclouds.googlecompute.options.FirewallOptions;
 import org.jclouds.googlecompute.options.ListOptions;
 import org.jclouds.javax.annotation.Nullable;
 
@@ -50,31 +51,31 @@ public interface FirewallApi {
     * Creates a firewall resource in the specified project using the data included in the request.
     *
     *
-    * @param firewall the firewall to be inserted.
+    * @param firewallOptions the firewall to be inserted.
     * @return an Operation resource. To check on the status of an operation, poll the Operations resource returned to
     *         you, and look for the status field.
     */
-   Operation create(Firewall firewall);
+   Operation create(FirewallOptions firewallOptions);
 
    /**
     * Updates the specified firewall resource with the data included in the request.
     *
     * @param firewallName the name firewall to be updated.
-    * @param firewall     the new firewall.
+    * @param firewallOptions     the new firewall.
     * @return an Operation resource. To check on the status of an operation, poll the Operations resource returned to
     *         you, and look for the status field.
     */
-   Operation update(String firewallName, Firewall firewall);
+   Operation update(String firewallName, FirewallOptions firewallOptions);
 
    /**
     * Updates the specified firewall resource, with patch semantics, with the data included in the request.
     *
     * @param firewallName the name firewall to be updated.
-    * @param firewall     the new firewall.
+    * @param firewallOptions     the new firewall.
     * @return an Operation resource. To check on the status of an operation, poll the Operations resource returned to
     *         you, and look for the status field.
     */
-   Operation patch(String firewallName, Firewall firewall);
+   Operation patch(String firewallName, FirewallOptions firewallOptions);
 
    /**
     * Deletes the specified image resource.
@@ -96,13 +97,13 @@ public interface FirewallApi {
    ListPage<Firewall> listAtMarker(@Nullable String marker);
 
    /**
-    * Retrieves the list of firewall resources available to the specified project.
-    * By default the list as a maximum size of 100, if no options are provided or ListOptions#getMaxResults() has not
+    * Retrieves the LIST_MACHINE_TYPES_REQUEST of firewall resources available to the specified project.
+    * By default the LIST_MACHINE_TYPES_REQUEST as a maximum size of 100, if no options are provided or ListOptions#getMaxResults() has not
     * been set.
     *
-    * @param marker      marks the beginning of the next list page
+    * @param marker      marks the beginning of the next LIST_MACHINE_TYPES_REQUEST page
     * @param listOptions listing options
-    * @return a page of the list
+    * @return a page of the LIST_MACHINE_TYPES_REQUEST
     * @see ListOptions
     * @see org.jclouds.googlecompute.domain.ListPage
     */
@@ -114,7 +115,7 @@ public interface FirewallApi {
    public PagedIterable<Firewall> list();
 
    /**
-    * A paged version of FirewallApi#list()
+    * A paged version of FirewallApi#LIST_MACHINE_TYPES_REQUEST()
     *
     * @return a Paged, Fluent Iterable that is able to fetch additional pages when required
     * @see PagedIterable

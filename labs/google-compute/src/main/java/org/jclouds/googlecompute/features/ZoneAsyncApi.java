@@ -69,7 +69,7 @@ public interface ZoneAsyncApi {
    /**
     * @see ZoneApi#listFirstPage()
     */
-   @Named("Zones:list")
+   @Named("Zones:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/zones")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -80,7 +80,7 @@ public interface ZoneAsyncApi {
    /**
     * @see ZoneApi#listAtMarker(String)
     */
-   @Named("Zones:list")
+   @Named("Zones:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/zones")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -91,7 +91,7 @@ public interface ZoneAsyncApi {
    /**
     * @see ZoneApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Zones:list")
+   @Named("Zones:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/zones")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -102,7 +102,7 @@ public interface ZoneAsyncApi {
    /**
     * @see ZoneApi#list()
     */
-   @Named("Zones:list")
+   @Named("Zones:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/zones")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -114,7 +114,7 @@ public interface ZoneAsyncApi {
    /**
     * @see ZoneApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Zones:list")
+   @Named("Zones:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/zones")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)

@@ -26,6 +26,7 @@ import org.jclouds.googlecompute.domain.ListPage;
 import org.jclouds.googlecompute.domain.Operation;
 import org.jclouds.googlecompute.functions.internal.PATCH;
 import org.jclouds.googlecompute.functions.internal.ParseFirewalls;
+import org.jclouds.googlecompute.options.FirewallOptions;
 import org.jclouds.googlecompute.options.ListOptions;
 import org.jclouds.javax.annotation.Nullable;
 import org.jclouds.oauth.v2.config.OAuthScopes;
@@ -80,7 +81,7 @@ public interface FirewallAsyncApi {
    ListenableFuture<Firewall> get(@PathParam("firewall") String firewallName);
 
    /**
-    * @see FirewallApi#create(org.jclouds.googlecompute.domain.Firewall)
+    * @see FirewallApi#create(org.jclouds.googlecompute.options.FirewallOptions)
     */
    @Named("Firewalls:insert")
    @POST
@@ -88,10 +89,10 @@ public interface FirewallAsyncApi {
    @Produces(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
    @OAuthScopes({COMPUTE_SCOPE})
-   ListenableFuture<Operation> create(@BinderParam(BindToJsonPayload.class) Firewall firewall);
+   ListenableFuture<Operation> create(@BinderParam(BindToJsonPayload.class) FirewallOptions firewallOptions);
 
    /**
-    * @see FirewallApi#update(String, org.jclouds.googlecompute.domain.Firewall)
+    * @see FirewallApi#update(String, org.jclouds.googlecompute.options.FirewallOptions)
     */
    @Named("Firewalls:update")
    @PUT
@@ -100,10 +101,10 @@ public interface FirewallAsyncApi {
    @Path("/firewalls/{firewall}")
    @OAuthScopes({COMPUTE_SCOPE})
    ListenableFuture<Operation> update(@PathParam("firewall") String firewallName,
-                                      @BinderParam(BindToJsonPayload.class) Firewall firewall);
+                                      @BinderParam(BindToJsonPayload.class) FirewallOptions firewallOptions);
 
    /**
-    * @see FirewallApi#patch(String, org.jclouds.googlecompute.domain.Firewall)
+    * @see FirewallApi#patch(String, org.jclouds.googlecompute.options.FirewallOptions)
     */
    @Named("Firewalls:patch")
    @PATCH
@@ -112,7 +113,7 @@ public interface FirewallAsyncApi {
    @Path("/firewalls/{firewall}")
    @OAuthScopes({COMPUTE_SCOPE})
    ListenableFuture<Operation> patch(@PathParam("firewall") String firewallName,
-                                     @BinderParam(BindToJsonPayload.class) Firewall firewall);
+                                     @BinderParam(BindToJsonPayload.class) FirewallOptions firewallOptions);
 
    /**
     * @see FirewallApi#delete(String)
@@ -128,7 +129,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#listFirstPage()
     */
-   @Named("Firewalls:list")
+   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
@@ -140,7 +141,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#listAtMarker(String)
     */
-   @Named("Firewalls:list")
+   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
@@ -152,7 +153,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Firewalls:list")
+   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
@@ -165,7 +166,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#list()
     */
-   @Named("Firewalls:list")
+   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
@@ -179,7 +180,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Firewalls:list")
+   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")

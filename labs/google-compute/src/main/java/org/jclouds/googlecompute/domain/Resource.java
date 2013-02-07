@@ -152,7 +152,7 @@ public class Resource {
     */
    @Override
    public int hashCode() {
-      return Objects.hashCode(kind, id, name);
+      return Objects.hashCode(kind, name);
    }
 
    /**
@@ -164,7 +164,6 @@ public class Resource {
       if (obj == null || getClass() != obj.getClass()) return false;
       Resource that = Resource.class.cast(obj);
       return equal(this.kind, that.kind)
-              && equal(this.id, that.id)
               && equal(this.name, that.name);
    }
 

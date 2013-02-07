@@ -156,7 +156,7 @@ public class Instance extends Resource {
    }
 
    /**
-    * @return list of service accounts each with specified scopes.
+    * @return LIST_MACHINE_TYPES_REQUEST of service accounts each with specified scopes.
     * @see ServiceAccount
     */
    public Set<ServiceAccount> getServiceAccounts() {
@@ -975,7 +975,7 @@ public class Instance extends Resource {
       }
 
       /**
-       * @return the list of scopes to be made available for this service account.
+       * @return the LIST_MACHINE_TYPES_REQUEST of scopes to be made available for this service account.
        */
       public Set<String> getScopes() {
          return scopes;

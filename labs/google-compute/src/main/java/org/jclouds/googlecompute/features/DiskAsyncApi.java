@@ -105,7 +105,7 @@ public interface DiskAsyncApi {
    /**
     * @see org.jclouds.googlecompute.features.DiskApi#listFirstPage()
     */
-   @Named("Disks:list")
+   @Named("Disks:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/disks")
@@ -117,7 +117,7 @@ public interface DiskAsyncApi {
    /**
     * @see DiskApi#listAtMarker(String)
     */
-   @Named("Disks:list")
+   @Named("Disks:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/disks")
@@ -129,7 +129,7 @@ public interface DiskAsyncApi {
    /**
     * @see DiskApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Disks:list")
+   @Named("Disks:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/disks")
@@ -141,7 +141,7 @@ public interface DiskAsyncApi {
    /**
     * @see DiskApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Disks:list")
+   @Named("Disks:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/disks")
@@ -154,7 +154,7 @@ public interface DiskAsyncApi {
    /**
     * @see DiskApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Disks:list")
+   @Named("Disks:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/disks")

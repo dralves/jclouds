@@ -85,7 +85,7 @@ public interface ImageAsyncApi {
    /**
     * @see ImageApi#listFirstPage()
     */
-   @Named("Images:list")
+   @Named("Images:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/images")
@@ -97,7 +97,7 @@ public interface ImageAsyncApi {
    /**
     * @see ImageApi#listAtMarker(String)
     */
-   @Named("Images:list")
+   @Named("Images:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/images")
@@ -109,7 +109,7 @@ public interface ImageAsyncApi {
    /**
     * @see ImageApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Images:list")
+   @Named("Images:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/images")
@@ -122,7 +122,7 @@ public interface ImageAsyncApi {
    /**
     * @see ImageApi#listAtMarker(String)
     */
-   @Named("Images:list")
+   @Named("Images:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/images")
@@ -135,7 +135,7 @@ public interface ImageAsyncApi {
    /**
     * @see ImageApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Images:list")
+   @Named("Images:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/images")

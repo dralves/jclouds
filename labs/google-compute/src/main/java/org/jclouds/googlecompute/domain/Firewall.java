@@ -81,14 +81,14 @@ public final class Firewall extends Resource {
     * One or both of sourceRanges and sourceTags may be set; an inbound connection is allowed if either the range or
     * the tag of the source matches.
     *
-    * @return a list of IP address blocks expressed in CIDR format which this rule applies to.
+    * @return a LIST_MACHINE_TYPES_REQUEST of IP address blocks expressed in CIDR format which this rule applies to.
     */
    public Set<String> getSourceRanges() {
       return sourceRanges;
    }
 
    /**
-    * @return a list of instance tags which this rule applies to. One or both of sourceRanges and sourceTags may be
+    * @return a LIST_MACHINE_TYPES_REQUEST of instance tags which this rule applies to. One or both of sourceRanges and sourceTags may be
     *         set; an inbound connection is allowed if either the range or the tag of the source matches.
     */
    public Set<String> getSourceTags() {
@@ -98,7 +98,7 @@ public final class Firewall extends Resource {
    /**
     * If no targetTags are specified, the firewall rule applies to all instances on the specified network.
     *
-    * @return a list of instance tags indicating sets of instances located on network which may make network
+    * @return a LIST_MACHINE_TYPES_REQUEST of instance tags indicating sets of instances located on network which may make network
     *         connections as specified in allowed.
     */
    public Set<String> getTargetTags() {
@@ -108,7 +108,7 @@ public final class Firewall extends Resource {
    /**
     * Each rule specifies a protocol and port-range tuple that describes a permitted connection.
     *
-    * @return the list of rules specified by this firewall.
+    * @return the LIST_MACHINE_TYPES_REQUEST of rules specified by this firewall.
     */
    public Set<Rule> getAllowed() {
       return allowed;
@@ -291,7 +291,7 @@ public final class Firewall extends Resource {
        * <p/>
        * It is an error to specify this for any protocol that isn't UDP or TCP.
        *
-       * @return An optional list of ports which are allowed.
+       * @return An optional LIST_MACHINE_TYPES_REQUEST of ports which are allowed.
        */
       public RangeSet<Integer> getPorts() {
          return ports;
@@ -350,7 +350,7 @@ public final class Firewall extends Resource {
           * @see org.jclouds.googlecompute.domain.Firewall.Rule#getIPProtocol()
           */
          public Builder IPProtocol(IPProtocol IPProtocol) {
-            this.ipProtocol = checkNotNull(IPProtocol);
+            this.ipProtocol = IPProtocol;
             return this;
          }
 

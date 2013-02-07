@@ -64,9 +64,9 @@ public interface OperationApi {
     * By default the listFirstPage as a maximum size of 100, if no options are provided or ListOptions#getMaxResults()
     * has not been set.
     *
-    * @param marker      marks the beginning of the next list page
+    * @param marker      marks the beginning of the next LIST_MACHINE_TYPES_REQUEST page
     * @param listOptions listing options
-    * @return a page of the list, starting at marker
+    * @return a page of the LIST_MACHINE_TYPES_REQUEST, starting at marker
     * @see ListOptions
     * @see org.jclouds.googlecompute.domain.ListPage
     */

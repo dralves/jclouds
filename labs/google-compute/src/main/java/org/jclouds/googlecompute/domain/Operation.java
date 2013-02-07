@@ -81,7 +81,7 @@ public class Operation extends Resource {
       this.insertTime = checkNotNull(insertTime, "insertTime of %s", name);
       this.startTime = fromNullable(startTime);
       this.endTime = fromNullable(endTime);
-      this.httpError = httpErrorStatusCode != null ?
+      this.httpError = httpErrorStatusCode != null && httpErrorStatusCode != 0 ?
               Optional.of(HttpResponse.builder()
                       .statusCode(httpErrorStatusCode)
                       .message(httpErrorMessage)

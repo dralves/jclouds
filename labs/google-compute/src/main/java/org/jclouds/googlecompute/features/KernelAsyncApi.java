@@ -70,7 +70,7 @@ public interface KernelAsyncApi {
    /**
     * @see KernelApi#listFirstPage()
     */
-   @Named("Kernels:list")
+   @Named("Kernels:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/kernels")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -81,7 +81,7 @@ public interface KernelAsyncApi {
    /**
     * @see KernelApi#listAtMarker(String)
     */
-   @Named("Kernels:list")
+   @Named("Kernels:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/kernels")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -92,7 +92,7 @@ public interface KernelAsyncApi {
    /**
     * @see KernelApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Kernels:list")
+   @Named("Kernels:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/kernels")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -104,7 +104,7 @@ public interface KernelAsyncApi {
    /**
     * @see org.jclouds.googlecompute.features.KernelApi#list()
     */
-   @Named("Kernels:list")
+   @Named("Kernels:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/kernels")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -116,7 +116,7 @@ public interface KernelAsyncApi {
    /**
     * @see KernelApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Kernels:list")
+   @Named("Kernels:LIST_MACHINE_TYPES_REQUEST")
    @GET
    @Path("/kernels")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
