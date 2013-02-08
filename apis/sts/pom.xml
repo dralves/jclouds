@@ -36,7 +36,7 @@
   <properties>
     <test.sts.endpoint>https://sts.amazonaws.com</test.sts.endpoint>
     <test.sts.api-version>2011-06-15</test.sts.api-version>
-    <test.sts.build-version></test.sts.build-version>
+    <test.sts.build-version />
     <test.sts.identity>${test.aws.identity}</test.sts.identity>
     <test.sts.credential>${test.aws.credential}</test.sts.credential>
 

@@ -36,7 +36,7 @@
   <properties>
     <test.cloudstack-ec2.endpoint>http://localhost:8090/bridge/rest/AmazonEC2</test.cloudstack-ec2.endpoint>
     <test.cloudstack-ec2.api-version>2010-11-15</test.cloudstack-ec2.api-version>
-    <test.cloudstack-ec2.build-version></test.cloudstack-ec2.build-version>
+    <test.cloudstack-ec2.build-version />
     <test.cloudstack-ec2.identity>FIXME_IDENTITY</test.cloudstack-ec2.identity>
     <test.cloudstack-ec2.credential>FIXME_CREDENTIAL</test.cloudstack-ec2.credential>
     <test.cloudstack-ec2.template>imageId=fixme-region/ami-fixme</test.cloudstack-ec2.template>

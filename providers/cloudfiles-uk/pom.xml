@@ -37,7 +37,7 @@
         <test.blobstore.container-count>15</test.blobstore.container-count>
         <test.cloudfiles-uk.endpoint>https://lon.auth.api.rackspacecloud.com</test.cloudfiles-uk.endpoint>
         <test.cloudfiles-uk.api-version>1.0</test.cloudfiles-uk.api-version>
-        <test.cloudfiles-uk.build-version></test.cloudfiles-uk.build-version>
+        <test.cloudfiles-uk.build-version />
         <test.cloudfiles-uk.identity>${test.rackspace-uk.identity}</test.cloudfiles-uk.identity>
         <test.cloudfiles-uk.credential>${test.rackspace-uk.credential}</test.cloudfiles-uk.credential>
 

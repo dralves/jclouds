@@ -24,10 +24,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import com.google.common.util.concurrent.FutureFallback;
-
 /**
- * Annotates the appropriate {@link FutureFallback} which propagates the exception or returns a valid fallback value.
+ * Annotates the appropriate {@link org.jclouds.Fallback} which propagates
+ * the exception or returns a valid fallback value.
  * 
  * @since 1.6
  * @author Adrian Cole
@@ -35,5 +34,5 @@ import com.google.common.util.concurrent.FutureFallback;
 @Target(METHOD)
 @Retention(RUNTIME)
 public @interface Fallback {
-   Class<? extends FutureFallback<?>> value();
+   Class<? extends org.jclouds.Fallback<?>> value();
 }

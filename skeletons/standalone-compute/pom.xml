@@ -38,7 +38,7 @@
         <test.servermanager.identity>FIXME</test.servermanager.identity>
         <test.servermanager.endpoint>https://servermanager.com</test.servermanager.endpoint>
         <test.servermanager.api-version>1.0</test.servermanager.api-version>
-        <test.servermanager.build-version></test.servermanager.build-version>
+        <test.servermanager.build-version />
         <test.servermanager.identity>FIXME</test.servermanager.identity>
 
       <jclouds.osgi.export>org.jclouds.servermanager*;version="${project.version}"</jclouds.osgi.export>

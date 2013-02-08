@@ -35,7 +35,7 @@
 
   <properties>
     <test.byon.endpoint>file://c:/test.txt</test.byon.endpoint>
-    <test.byon.sudo-password></test.byon.sudo-password>
+    <test.byon.sudo-password />
       <jclouds.osgi.export>org.jclouds.byon*;version="${project.version}"</jclouds.osgi.export>
       <jclouds.osgi.import>
           org.jclouds.compute.internal;version="${project.version}",

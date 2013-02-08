@@ -36,7 +36,7 @@
   <properties>
     <test.iam.endpoint>https://iam.amazonaws.com</test.iam.endpoint>
     <test.iam.api-version>2010-05-08</test.iam.api-version>
-    <test.iam.build-version></test.iam.build-version>
+    <test.iam.build-version />
     <test.iam.identity>${test.aws.identity}</test.iam.identity>
     <test.iam.credential>${test.aws.credential}</test.iam.credential>
 

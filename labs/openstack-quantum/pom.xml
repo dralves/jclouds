@@ -38,7 +38,7 @@
     <test.openstack-quantum.endpoint>http://localhost:5000/v2.0/</test.openstack-quantum.endpoint>
     <!-- keystone version -->
     <test.openstack-quantum.api-version>1.0</test.openstack-quantum.api-version>
-    <test.openstack-quantum.build-version></test.openstack-quantum.build-version>
+    <test.openstack-quantum.build-version />
     <test.openstack-quantum.identity>FIXME_IDENTITY</test.openstack-quantum.identity>
     <test.openstack-quantum.credential>FIXME_CREDENTIALS</test.openstack-quantum.credential>
     <test.jclouds.keystone.credential-type>passwordCredentials</test.jclouds.keystone.credential-type>

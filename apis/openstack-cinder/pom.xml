@@ -38,7 +38,7 @@
     <test.openstack-cinder.endpoint>http://localhost:5000/v2.0/</test.openstack-cinder.endpoint>
     <!-- keystone version -->
     <test.openstack-cinder.api-version>1</test.openstack-cinder.api-version>
-    <test.openstack-cinder.build-version></test.openstack-cinder.build-version>
+    <test.openstack-cinder.build-version />
     <test.openstack-cinder.identity>FIXME_IDENTITY</test.openstack-cinder.identity>
     <test.openstack-cinder.credential>FIXME_CREDENTIALS</test.openstack-cinder.credential>
     <test.jclouds.keystone.credential-type>passwordCredentials</test.jclouds.keystone.credential-type>

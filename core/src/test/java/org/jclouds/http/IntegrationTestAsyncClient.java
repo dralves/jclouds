@@ -52,13 +52,13 @@ import org.jclouds.util.Strings2;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Multimap;
-import com.google.common.util.concurrent.FutureFallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Provides;
 
 /**
  * Sample test for the behaviour of our Integration Test jetty server.
  * 
+ * @see IntegrationTestClient
  * @author Adrian Cole
  */
 public interface IntegrationTestAsyncClient {
@@ -92,13 +92,14 @@ public interface IntegrationTestAsyncClient {
    @Fallback(FooOnException.class)
    ListenableFuture<String> downloadException(@PathParam("id") String id, HttpRequestOptions options);
 
-   static class FooOnException implements FutureFallback<String> {
-
-      @Override
+   static class FooOnException implements org.jclouds.Fallback<String> {
       public ListenableFuture<String> create(Throwable t) throws Exception {
          return immediateFuture("foo");
       }
 
+      public String createOrPropagate(Throwable t) throws Exception {
+         return "foo";
+      }
    }
 
    @GET
@@ -195,6 +196,10 @@ public interface IntegrationTestAsyncClient {
       }
 
    }
+
+   @PUT
+   @Path("/objects/{id}")
+   ListenableFuture<Void> putNothing(@PathParam("id") String id);
 
    @Provides
    StringBuilder newStringBuilder();

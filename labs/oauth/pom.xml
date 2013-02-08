@@ -19,8 +19,7 @@
   under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.jclouds</groupId>
@@ -42,7 +41,7 @@
         <test.jclouds.oauth.audience>FIX_ME</test.jclouds.oauth.audience>
         <test.jclouds.oauth.scopes>FIX_ME</test.jclouds.oauth.scopes>
         <test.oauth.api-version>2</test.oauth.api-version>
-        <test.oauth.build-version></test.oauth.build-version>
+        <test.oauth.build-version />
     </properties>
 
     <dependencies>
@@ -108,7 +107,7 @@
                                         <test.oauth.endpoint>${test.oauth.endpoint}</test.oauth.endpoint>
                                         <test.oauth.api-version>${test.oauth.api-version}</test.oauth.api-version>
                                         <test.oauth.build-version>${test.oauth.build-version}</test.oauth.build-version>
-                                        <test.jclouds.oauth.signature-or-mac-algorithm>${test.jclouds.oauth.signature-or-mac-algorithm>}</test.jclouds.oauth.signature-or-mac-algorithm>
+                                        <test.jclouds.oauth.signature-or-mac-algorithm>${test.jclouds.oauth.signature-or-mac-algorithm&gt;}</test.jclouds.oauth.signature-or-mac-algorithm>
                                         <test.jclouds.oauth.audience>${test.jclouds.oauth.audience}</test.jclouds.oauth.audience>
                                         <test.jclouds.oauth.scopes>${test.jclouds.oauth.scopes}</test.jclouds.oauth.scopes>
                                     </systemPropertyVariables>

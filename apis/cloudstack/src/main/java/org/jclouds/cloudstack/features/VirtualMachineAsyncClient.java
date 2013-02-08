@@ -20,6 +20,7 @@ package org.jclouds.cloudstack.features;
 
 import java.util.Set;
 
+import javax.inject.Named;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -38,7 +39,6 @@ import org.jclouds.rest.annotations.OnlyElement;
 import org.jclouds.rest.annotations.QueryParams;
 import org.jclouds.rest.annotations.RequestFilters;
 import org.jclouds.rest.annotations.SelectJson;
-import org.jclouds.rest.annotations.Unwrap;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -57,6 +57,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#listVirtualMachines
     */
+   @Named("listVirtualMachines")
    @GET
    @QueryParams(keys = { "command", "listAll" }, values = { "listVirtualMachines", "true" })
    @SelectJson("virtualmachine")
@@ -67,6 +68,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#getVirtualMachine
     */
+   @Named("listVirtualMachines")
    @GET
    @QueryParams(keys = { "command", "listAll" }, values = { "listVirtualMachines", "true" })
    @SelectJson("virtualmachine")
@@ -78,9 +80,10 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#deployVirtualMachineInZone
     */
+   @Named("deployVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "deployVirtualMachine")
-   @Unwrap
+   @SelectJson({ "deployvirtualmachine", "deployvirtualmachineresponse" })
    @Consumes(MediaType.APPLICATION_JSON)
    ListenableFuture<AsyncCreateResponse> deployVirtualMachineInZone(@QueryParam("zoneid") String zoneId,
          @QueryParam("serviceofferingid") String serviceOfferingId, @QueryParam("templateid") String templateId,
@@ -89,6 +92,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#rebootVirtualMachine
     */
+   @Named("rebootVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "rebootVirtualMachine")
    @SelectJson("jobid")
@@ -98,6 +102,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#startVirtualMachine
     */
+   @Named("startVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "startVirtualMachine")
    @SelectJson("jobid")
@@ -107,6 +112,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#stopVirtualMachine
     */
+   @Named("stopVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "stopVirtualMachine")
    @SelectJson("jobid")
@@ -116,6 +122,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#resetPasswordForVirtualMachine
     */
+   @Named("resetPasswordForVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "resetPasswordForVirtualMachine")
    @SelectJson("jobid")
@@ -125,6 +132,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#getEncryptedPasswordForVirtualMachine
     */
+   @Named("getVMPassword")
    @GET
    @QueryParams(keys = "command", values = "getVMPassword")
    @SelectJson("encryptedpassword")
@@ -134,6 +142,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#changeServiceForVirtualMachine
     */
+   @Named("changeServiceForVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "changeServiceForVirtualMachine")
    @SelectJson("jobid")
@@ -143,6 +152,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#updateVirtualMachine
     */
+   @Named("updateVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "updateVirtualMachine")
    @SelectJson("jobid")
@@ -152,6 +162,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#destroyVirtualMachine
     */
+   @Named("destroyVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "destroyVirtualMachine")
    @SelectJson("jobid")
@@ -162,6 +173,7 @@ public interface VirtualMachineAsyncClient {
    /**
     * @see VirtualMachineClient#assinVirtualMachine
     */
+   @Named("assignVirtualMachine")
    @GET
    @QueryParams(keys = "command", values = "assignVirtualMachine")
    @SelectJson("jobid")

@@ -38,7 +38,7 @@
     <test.openstack-keystone.endpoint>http://localhost:5000/v${jclouds.api-version}/</test.openstack-keystone.endpoint>
     <!-- keystone version -->
     <test.openstack-keystone.api-version>2.0</test.openstack-keystone.api-version>
-    <test.openstack-keystone.build-version></test.openstack-keystone.build-version>
+    <test.openstack-keystone.build-version />
     <test.openstack-keystone.identity>FIXME_IDENTITY</test.openstack-keystone.identity>
     <test.openstack-keystone.credential>FIXME_CREDENTIALS</test.openstack-keystone.credential>
     <test.jclouds.keystone.credential-type>passwordCredentials</test.jclouds.keystone.credential-type>

@@ -36,7 +36,8 @@
         <connection>scm:svn:http://jclouds.googlecode.com/svn/trunk</connection>
         <developerConnection>scm:svn:https://jclouds.googlecode.com/svn/trunk</developerConnection>
         <url>http://jclouds.googlecode.com/svn/trunk</url>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <properties>
         <jclouds.osgi.import>

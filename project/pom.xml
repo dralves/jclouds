@@ -74,7 +74,8 @@
         <connection>scm:git:git://github.com/jclouds/jclouds.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/jclouds/jclouds.git</developerConnection>
         <url>http://github.com/jclouds/jclouds</url>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <repositories>
         <repository>
@@ -269,6 +270,11 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
                 <version>1.0.7</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.mockwebserver</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>20121111</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
