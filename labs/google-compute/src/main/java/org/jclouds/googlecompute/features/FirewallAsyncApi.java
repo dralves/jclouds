@@ -129,7 +129,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#listFirstPage()
     */
-   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Firewalls:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
@@ -141,7 +141,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#listAtMarker(String)
     */
-   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Firewalls:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
@@ -153,7 +153,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Firewalls:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
@@ -166,7 +166,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#list()
     */
-   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Firewalls:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")
@@ -180,7 +180,7 @@ public interface FirewallAsyncApi {
    /**
     * @see FirewallApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Firewalls:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Firewalls:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/firewalls")

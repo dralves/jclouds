@@ -33,7 +33,7 @@ import static org.jclouds.googlecompute.GoogleComputeConstants.COMPUTE_READONLY_
 import static org.testng.Assert.assertSame;
 
 /**
- * A test specifically for the paging system. The code used is common to all LIST_MACHINE_TYPES_REQUEST() methods so we're using Images
+ * A test specifically for the paging system. The code used is common to all list() methods so we're using Images
  * but it could be anything else.
  *
  * @author David Alves

@@ -117,7 +117,7 @@ public interface NetworkAsyncApi {
    /**
     * @see NetworkApi#listFirstPage()
     */
-   @Named("Networks:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Networks:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/networks")
@@ -129,7 +129,7 @@ public interface NetworkAsyncApi {
    /**
     * @see NetworkApi#listAtMarker(String)
     */
-   @Named("Networks:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Networks:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/networks")
@@ -141,7 +141,7 @@ public interface NetworkAsyncApi {
    /**
     * @see NetworkApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Networks:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Networks:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/networks")
@@ -154,7 +154,7 @@ public interface NetworkAsyncApi {
    /**
     * @see NetworkApi#list()
     */
-   @Named("Networks:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Networks:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/networks")
@@ -167,7 +167,7 @@ public interface NetworkAsyncApi {
    /**
     * @see NetworkApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Networks:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Networks:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/networks")

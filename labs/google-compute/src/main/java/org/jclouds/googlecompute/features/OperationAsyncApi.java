@@ -83,7 +83,7 @@ public interface OperationAsyncApi {
    /**
     * @see OperationApi#listFirstPage()
     */
-   @Named("Operations:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Operations:list")
    @GET
    @Path("/operations")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -95,7 +95,7 @@ public interface OperationAsyncApi {
    /**
     * @see OperationApi#listAtMarker(String)
     */
-   @Named("Operations:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Operations:list")
    @GET
    @Path("/operations")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -107,7 +107,7 @@ public interface OperationAsyncApi {
    /**
     * @see OperationApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Operations:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Operations:list")
    @GET
    @Path("/operations")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -120,7 +120,7 @@ public interface OperationAsyncApi {
    /**
     * @see OperationApi#list()
     */
-   @Named("Operations:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Operations:list")
    @GET
    @Path("/operations")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -133,7 +133,7 @@ public interface OperationAsyncApi {
    /**
     * @see OperationApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Operations:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Operations:list")
    @GET
    @Path("/operations")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)

@@ -97,13 +97,13 @@ public interface FirewallApi {
    ListPage<Firewall> listAtMarker(@Nullable String marker);
 
    /**
-    * Retrieves the LIST_MACHINE_TYPES_REQUEST of firewall resources available to the specified project.
-    * By default the LIST_MACHINE_TYPES_REQUEST as a maximum size of 100, if no options are provided or ListOptions#getMaxResults() has not
+    * Retrieves the list of firewall resources available to the specified project.
+    * By default the list as a maximum size of 100, if no options are provided or ListOptions#getMaxResults() has not
     * been set.
     *
-    * @param marker      marks the beginning of the next LIST_MACHINE_TYPES_REQUEST page
+    * @param marker      marks the beginning of the next list page
     * @param listOptions listing options
-    * @return a page of the LIST_MACHINE_TYPES_REQUEST
+    * @return a page of the list
     * @see ListOptions
     * @see org.jclouds.googlecompute.domain.ListPage
     */
@@ -115,7 +115,7 @@ public interface FirewallApi {
    public PagedIterable<Firewall> list();
 
    /**
-    * A paged version of FirewallApi#LIST_MACHINE_TYPES_REQUEST()
+    * A paged version of FirewallApi#list()
     *
     * @return a Paged, Fluent Iterable that is able to fetch additional pages when required
     * @see PagedIterable

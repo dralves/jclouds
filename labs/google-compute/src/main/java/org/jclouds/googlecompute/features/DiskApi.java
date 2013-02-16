@@ -82,7 +82,7 @@ public interface DiskApi {
     * By default the listPage as a maximum size of 100, if no options are provided or ListOptions#getMaxResults() has
     * not been set.
     *
-    * @param marker      marks the beginning of the next LIST_MACHINE_TYPES_REQUEST page
+    * @param marker      marks the beginning of the next list page
     * @param listOptions listing options
     * @return a page of the listPage
     * @see ListOptions

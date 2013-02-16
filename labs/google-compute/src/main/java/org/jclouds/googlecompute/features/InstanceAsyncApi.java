@@ -107,7 +107,7 @@ public interface InstanceAsyncApi {
    /**
     * @see InstanceApi#listFirstPage()
     */
-   @Named("Instances:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Instances:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/instances")
@@ -119,7 +119,7 @@ public interface InstanceAsyncApi {
    /**
     * @see InstanceApi#listAtMarker(String)
     */
-   @Named("Instances:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Instances:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/instances")
@@ -131,7 +131,7 @@ public interface InstanceAsyncApi {
    /**
     * @see InstanceApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Instances:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Instances:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/instances")
@@ -143,7 +143,7 @@ public interface InstanceAsyncApi {
    /**
     * @see InstanceApi#list()
     */
-   @Named("Instances:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Instances:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/instances")
@@ -156,7 +156,7 @@ public interface InstanceAsyncApi {
    /**
     * @see InstanceApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("Instances:LIST_MACHINE_TYPES_REQUEST")
+   @Named("Instances:list")
    @GET
    @Consumes(MediaType.APPLICATION_JSON)
    @Path("/instances")

@@ -71,7 +71,7 @@ public interface MachineTypeAsyncApi {
    /**
     * @see MachineTypeApi#listFirstPage()
     */
-   @Named("MachineTypes:LIST_MACHINE_TYPES_REQUEST")
+   @Named("MachineTypes:list")
    @GET
    @Path("/machineTypes")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -82,7 +82,7 @@ public interface MachineTypeAsyncApi {
    /**
     * @see MachineTypeApi#listAtMarker(String)
     */
-   @Named("MachineTypes:LIST_MACHINE_TYPES_REQUEST")
+   @Named("MachineTypes:list")
    @GET
    @Path("/machineTypes")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -93,7 +93,7 @@ public interface MachineTypeAsyncApi {
    /**
     * @see MachineTypeApi#listAtMarker(String, org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("MachineTypes:LIST_MACHINE_TYPES_REQUEST")
+   @Named("MachineTypes:list")
    @GET
    @Path("/machineTypes")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -105,7 +105,7 @@ public interface MachineTypeAsyncApi {
    /**
     * @see org.jclouds.googlecompute.features.MachineTypeApi#list()
     */
-   @Named("MachineTypes:LIST_MACHINE_TYPES_REQUEST")
+   @Named("MachineTypes:list")
    @GET
    @Path("/machineTypes")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
@@ -117,7 +117,7 @@ public interface MachineTypeAsyncApi {
    /**
     * @see MachineTypeApi#list(org.jclouds.googlecompute.options.ListOptions)
     */
-   @Named("MachineTypes:LIST_MACHINE_TYPES_REQUEST")
+   @Named("MachineTypes:list")
    @GET
    @Path("/machineTypes")
    @OAuthScopes(COMPUTE_READONLY_SCOPE)
