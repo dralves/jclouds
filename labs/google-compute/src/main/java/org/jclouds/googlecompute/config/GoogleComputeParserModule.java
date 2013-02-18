@@ -38,6 +38,7 @@ import org.jclouds.googlecompute.domain.Instance;
 import org.jclouds.googlecompute.domain.InstanceTemplate;
 import org.jclouds.googlecompute.domain.Operation;
 import org.jclouds.googlecompute.domain.Project;
+import org.jclouds.googlecompute.options.FirewallOptions;
 import org.jclouds.json.config.GsonModule;
 import org.jclouds.oauth.v2.domain.ClaimSet;
 import org.jclouds.oauth.v2.domain.Header;
@@ -75,6 +76,7 @@ public class GoogleComputeParserModule extends AbstractModule {
               .put(Project.class, new ProjectTypeAdapter())
               .put(Instance.class, new InstanceTypeAdapter())
               .put(InstanceTemplate.class, new InstanceTemplateTypeAdapter())
+              .put(FirewallOptions.class, new FirewallOptionsTypeAdapter())
               .put(Rule.class, new RuleTypeAdapter())
               .build();
    }
@@ -132,7 +134,24 @@ public class GoogleComputeParserModule extends AbstractModule {
 
          // deal with network
          JsonArray networkInterfaces = new JsonArray();
-         networkInterfaces.add(context.serialize(src.getNetwork(), InstanceTemplate.Network.class));
+
+         JsonObject networkInterface = new JsonObject();
+         networkInterface.addProperty("network", template.getNetworkInterface().getNetwork().toString());
+         if (template.getNetworkInterface().getPrivateIP() != null) {
+            networkInterface.addProperty("networkIP", template.getNetworkInterface().getPrivateIP());
+         }
+         if (template.getNetworkInterface().isPubliclyAccessible()) {
+            JsonObject accessConfig = new JsonObject();
+            accessConfig.addProperty("type", "ONE_TO_ONE_NAT");
+            if (template.getNetworkInterface().getPublicIp() != null) {
+               accessConfig.addProperty("natIP", template.getNetworkInterface().getPublicIp());
+            }
+            JsonArray accessConfigs = new JsonArray();
+            accessConfigs.add(accessConfig);
+            networkInterface.add("accessConfigs", accessConfigs);
+         }
+
+         networkInterfaces.add(networkInterface);
          instance.add("networkInterfaces", networkInterfaces);
 
          // deal with persistent disks
@@ -165,6 +184,7 @@ public class GoogleComputeParserModule extends AbstractModule {
             image(template.getImage());
             tags(template.getTags());
             serviceAccounts(template.getServiceAccounts());
+            networkInterface(template.getNetworkInterface());
          }
       }
    }
@@ -287,6 +307,43 @@ public class GoogleComputeParserModule extends AbstractModule {
 
       }
    }
+
+   @Singleton
+   private static class FirewallOptionsTypeAdapter implements JsonSerializer<FirewallOptions> {
+
+      @Override
+      public JsonElement serialize(FirewallOptions src, Type typeOfSrc, JsonSerializationContext context) {
+         JsonObject firewall = new JsonObject();
+         firewall.addProperty("name", src.getName());
+         firewall.addProperty("network", src.getNetwork().toString());
+         if (!src.getSourceRanges().isEmpty()) {
+            firewall.add("sourceRanges", buildArrayOfStrings(src.getSourceRanges()));
+         }
+         if (!src.getSourceTags().isEmpty()) {
+            firewall.add("sourceTags", buildArrayOfStrings(src.getSourceTags()));
+         }
+         if (!src.getTargetTags().isEmpty()) {
+            firewall.add("targetTags", buildArrayOfStrings(src.getTargetTags()));
+         }
+         if (!src.getAllowed().isEmpty()) {
+            JsonArray rules = new JsonArray();
+            for (Rule rule : src.getAllowed()) {
+               rules.add(context.serialize(rule, Firewall.Rule.class));
+            }
+            firewall.add("allowed", rules);
+         }
+         return firewall;
+      }
+   }
+
+   private static JsonArray buildArrayOfStrings(Set<String> strings) {
+      JsonArray array = new JsonArray();
+      for (String string : strings) {
+         array.add(new JsonPrimitive(string));
+      }
+      return array;
+   }
+
 
    private static class RuleTypeAdapter implements JsonDeserializer<Firewall.Rule>, JsonSerializer<Firewall.Rule> {
 

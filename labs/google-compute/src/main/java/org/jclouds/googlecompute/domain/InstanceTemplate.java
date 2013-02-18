@@ -20,9 +20,9 @@
 package org.jclouds.googlecompute.domain;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.jclouds.javax.annotation.Nullable;
 
 import java.net.URI;
 import java.util.Map;
@@ -47,8 +47,7 @@ public class InstanceTemplate {
    protected Set<Instance.ServiceAccount> serviceAccounts = Sets.newLinkedHashSet();
 
    protected transient Set<PersistentDisk> disks = Sets.newLinkedHashSet();
-   protected transient Network network;
-   protected transient String networkName;
+   protected transient NetworkInterface networkInterface;
    protected transient Map<String, String> metadata = Maps.newLinkedHashMap();
    protected transient String machineTypeName;
    protected transient String zoneName;
@@ -161,26 +160,11 @@ public class InstanceTemplate {
    }
 
    /**
-    * @see org.jclouds.googlecompute.domain.Instance#getNetworkInterfaces()
+    * Configures this instance's network interface.
+    * @set NetworkInterface
     */
-   public InstanceTemplate network(URI network) {
-      // by default use the provided network and set to obtain an external IP address and not to specify an internal IP
-      // this behavior can be overriden by using network(Network network)
-      this.network = new Network(checkNotNull(network, "network"), null,
-              ImmutableSet.of(Instance.NetworkInterface.AccessConfig.builder()
-                      .name("external")
-                      .type(Instance.NetworkInterface.AccessConfig.Type.ONE_TO_ONE_NAT)
-                      .build()));
-      return this;
-   }
-
-   private InstanceTemplate network(Network network) {
-      this.network = network;
-      return this;
-   }
-
-   public InstanceTemplate networkName(String networkName) {
-      this.networkName = networkName;
+   public InstanceTemplate networkInterface(NetworkInterface networkInterface) {
+      this.networkInterface = networkInterface;
       return this;
    }
 
@@ -264,15 +248,8 @@ public class InstanceTemplate {
    /**
     * @see org.jclouds.googlecompute.domain.Instance#getNetworkInterfaces()
     */
-   public Network getNetwork() {
-      return network;
-   }
-
-   /**
-    * @see org.jclouds.googlecompute.domain.Instance#getNetworkInterfaces()
-    */
-   public String getNetworkName() {
-      return networkName;
+   public NetworkInterface getNetworkInterface() {
+      return networkInterface;
    }
 
    /**
@@ -324,23 +301,24 @@ public class InstanceTemplate {
 
    public static class Builder {
 
-      public InstanceTemplate forMachineTypeAndNetwork(URI machineType, URI network) {
-         return new InstanceTemplate(machineType).network(network);
-      }
-
-      public InstanceTemplate forMachineTypeAndNetwork(URI machineType, Network network) {
-         return new InstanceTemplate(machineType).network(network);
-      }
-
       public InstanceTemplate forMachineTypeAndNetwork(String machineTypeName, String networkName) {
-         return new InstanceTemplate(machineTypeName).networkName(networkName);
+         return new InstanceTemplate(machineTypeName).networkInterface(NetworkInterface.builder().forNetwork
+                 (networkName));
       }
+
+      public InstanceTemplate forMachineTypeAndNetwork(URI machineType, URI network) {
+         return new InstanceTemplate(machineType).networkInterface(NetworkInterface.builder().forNetwork(network));
+      }
+
+      public InstanceTemplate forMachineTypeAndNetwork(URI machineType, NetworkInterface networkInterface) {
+         return new InstanceTemplate(machineType).networkInterface(networkInterface);
+      }
+
 
       /**
        * Creates instance options based on another instance.
        * All properties are the same as the original instance's except:
        * - disks (persistent disks are only attached to an instance)
-       * - networkInterfaces (these are instance specific)
        */
       public static InstanceTemplate fromInstance(Instance instance) {
          return InstanceTemplate.builder()
@@ -356,7 +334,7 @@ public class InstanceTemplate {
 
       public static InstanceTemplate fromInstanceTemplate(InstanceTemplate instanceTemplate) {
          return InstanceTemplate.builder()
-                 .forMachineTypeAndNetwork(instanceTemplate.getMachineType(), instanceTemplate.getNetwork())
+                 .forMachineTypeAndNetwork(instanceTemplate.getMachineType(), instanceTemplate.getNetworkInterface())
                  .name(instanceTemplate.getName())
                  .description(instanceTemplate.getDescription())
                  .zone(instanceTemplate.getZone())
@@ -420,29 +398,158 @@ public class InstanceTemplate {
       }
    }
 
-   public static class Network {
+   /**
+    * A NetworkInterface forn an instance.
+    */
+   public static class NetworkInterface {
 
-      private final URI network;
-      private final String networkIP;
-      private final Set<Instance.NetworkInterface.AccessConfig> accessConfigs;
+      private final String networkName;
+      private URI network;
+      private String privateIP;
+      private String publicIp;
+      private boolean publiclyAccessible = false;
 
-      public Network(URI network, String networkIP, Set<Instance.NetworkInterface.AccessConfig>
-              accessConfigs) {
-         this.networkIP = networkIP;
-         this.network = checkNotNull(network, "network");
-         this.accessConfigs = accessConfigs;
+      private NetworkInterface(URI network) {
+         this.network = network;
+         this.networkName = null;
       }
 
-      public Set<Instance.NetworkInterface.AccessConfig> getAccessConfigs() {
-         return accessConfigs;
+      private NetworkInterface(String networkName) {
+         this.networkName = networkName;
+         this.network = null;
       }
+
+      public NetworkInterface network(URI network) {
+         this.network = network;
+         return this;
+      }
+
+      public NetworkInterface privateIP(String privateIP) {
+         this.privateIP = privateIP;
+         return this;
+
+      }
+
+      public NetworkInterface publicIp(String publicIp) {
+         this.publicIp = publicIp;
+         this.publiclyAccessible = true;
+         return this;
+      }
+
+      public NetworkInterface publiclyAccessible(boolean publiclyAccessible) {
+         this.publiclyAccessible = publiclyAccessible;
+         return this;
+      }
+
+      /**
+       * The name of the networkInteface to which the instance will be attached.
+       *
+       * @see org.jclouds.googlecompute.domain.Network#getName()
+       */
+      public String getNetworkName() {
+         return this.networkName;
+      }
+
+      /**
+       * The URI of the networkInteface to which the instance will be attached.
+       *
+       * @see org.jclouds.googlecompute.domain.Network#getSelfLink()
+       */
 
       public URI getNetwork() {
          return network;
       }
 
-      public String getNetworkIP() {
-         return networkIP;
+      /**
+       * The private Ip for the instance, if unset one will be chosen from the networkInteface's range.
+       *
+       * @see org.jclouds.googlecompute.domain.Network#getIPv4Range()
+       */
+      @Nullable
+      public String getPrivateIP() {
+         return privateIP;
+      }
+
+      /**
+       * The public Ip for the instance, if unset and isPubliclyAccessible is true,
+       * one will be selected at random from the ephemeral public Ip pool.
+       *
+       * @return
+       */
+      @Nullable
+      public String getPublicIp() {
+         return publicIp;
+      }
+
+      /**
+       * Whether this NetworkInterface is to be accessible from the exterior.
+       *
+       * @return
+       */
+      public boolean isPubliclyAccessible() {
+         return publiclyAccessible;
+      }
+
+      public static Builder builder() {
+         return new Builder();
+      }
+
+      public static final class Builder {
+
+
+         public NetworkInterface forNetwork(String networkName) {
+            return new NetworkInterface(networkName);
+         }
+
+         public NetworkInterface forNetwork(URI network) {
+            return new NetworkInterface(network);
+         }
+      }
+
+      /**
+       * {@inheritDoc}
+       */
+      @Override
+      public boolean equals(Object object) {
+         if (this == object) {
+            return true;
+         }
+         if (object instanceof NetworkInterface) {
+            final NetworkInterface other = NetworkInterface.class.cast(object);
+            return equal(network, other.network)
+                    || equal(networkName, other.networkName);
+         } else {
+            return false;
+         }
+      }
+
+      /**
+       * {@inheritDoc}
+       */
+      @Override
+      public int hashCode() {
+         return Objects.hashCode(network, networkName);
+      }
+
+      /**
+       * {@inheritDoc}
+       */
+      protected Objects.ToStringHelper string() {
+         return Objects.toStringHelper("")
+                 .omitNullValues()
+                 .add("network", network)
+                 .add("networkName", networkName)
+                 .add("privateIP", privateIP)
+                 .add("publicIp", publicIp)
+                 .add("publiclyAccessible", publiclyAccessible);
+      }
+
+      /**
+       * {@inheritDoc}
+       */
+      @Override
+      public String toString() {
+         return string().toString();
       }
    }
 
@@ -461,7 +568,7 @@ public class InstanceTemplate {
                  && equal(tags, other.tags)
                  && equal(image, other.image)
                  && equal(disks, other.disks)
-                 && equal(network, other.network)
+                 && equal(networkInterface, other.networkInterface)
                  && equal(metadata, other.metadata)
                  && equal(serviceAccounts, other.serviceAccounts);
       } else {
@@ -474,7 +581,7 @@ public class InstanceTemplate {
     */
    @Override
    public int hashCode() {
-      return Objects.hashCode(description, tags, image, disks, network, metadata, serviceAccounts);
+      return Objects.hashCode(description, tags, image, disks, networkInterface, metadata, serviceAccounts);
    }
 
    /**
@@ -493,7 +600,7 @@ public class InstanceTemplate {
       if (serviceAccounts.size() > 0)
          toString.add("serviceAccounts", serviceAccounts);
       toString.add("image", image);
-      toString.add("networkInterfaces", network);
+      toString.add("networkInterfaces", networkInterface);
       return toString;
    }
 

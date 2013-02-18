@@ -60,8 +60,9 @@ public class InstanceBinder implements MapBinder {
       InstanceTemplate template = (InstanceTemplate) checkNotNull(postParams.get("template"), "template");
       template.name(checkNotNull(postParams.get("name"), "name").toString());
       template.zone(zonesToURI.apply((String) checkNotNull(postParams.get("zone"), "zone")));
-      if (template.getNetworkName() != null) {
-         template.network(networksToURI.apply(template.getNetworkName()));
+      InstanceTemplate.NetworkInterface networkInterface = template.getNetworkInterface();
+      if (networkInterface.getNetwork() == null) {
+         networkInterface.network(networksToURI.apply(networkInterface.getNetworkName()));
       }
 
       if (template.getMachineTypeName() != null) {

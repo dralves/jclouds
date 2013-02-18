@@ -124,11 +124,11 @@ public class InstanceApiExpectTest extends BaseGoogleComputeApiExpectTest {
               TOKEN_RESPONSE, insert,
               CREATE_INSTANCE_RESPONSE).getInstanceApiForProject("myproject");
 
-      assertEquals(api.createInZone("test-1",
-              InstanceTemplate.builder()
-                      .forMachineTypeAndNetwork("n1-standard-1", "default"),
-              "us-central1-a"),
-              new ParseOperationTest().expected());
+      InstanceTemplate options = InstanceTemplate.builder().forMachineTypeAndNetwork("n1-standard-1", "default");
+
+      options.getNetworkInterface().publiclyAccessible(true);
+
+      assertEquals(api.createInZone("test-1", options, "us-central1-a"), new ParseOperationTest().expected());
    }
 
    public void testInsertInstanceResponseIs2xxAllOptions() {
@@ -150,9 +150,10 @@ public class InstanceApiExpectTest extends BaseGoogleComputeApiExpectTest {
       Instance instance = new ParseInstanceTest().expected();
       InstanceTemplate options = new InstanceTemplate.Builder()
               .fromInstance(instance)
-              .network(instance.getNetworkInterfaces().iterator().next().getNetwork())
               .addDisk(InstanceTemplate.PersistentDisk.Mode.READ_WRITE,
                       URI.create("https://www.googleapis.com/compute/v1beta13/projects/myproject/disks/test"));
+
+      options.getNetworkInterface().publiclyAccessible(true);
 
       assertEquals(api.createInZone(instance.getName(), options, "us-central1-a"),
               new ParseOperationTest().expected());

@@ -28,130 +28,144 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
+ * Options to create a firewall.
+ *
+ * @see Firewall
  * @author David Alves
  */
 public class FirewallOptions {
 
    private final String name;
    private final URI network;
-   private final Set<String> sourceRanges;
-   private final Set<String> sourceTags;
-   private final Set<String> targetTags;
-   private final Set<Firewall.Rule> allowed;
+   private ImmutableSet.Builder<String> sourceRanges = ImmutableSet.builder();
+   private ImmutableSet.Builder<String> sourceTags = ImmutableSet.builder();
+   private ImmutableSet.Builder<String> targetTags = ImmutableSet.builder();
+   private ImmutableSet.Builder<Firewall.Rule> allowed = ImmutableSet.builder();
 
-   public FirewallOptions(String name, URI network, Set<String> sourceRanges, Set<String> sourceTags,
-                          Set<String> targetTags, Set<Firewall.Rule> allowed) {
-      this.allowed = checkNotNull(allowed, "allowed");
+   public FirewallOptions(String name, URI network) {
       this.name = checkNotNull(name, "name");
       this.network = checkNotNull(network, "network");
-      this.sourceRanges = checkNotNull(sourceRanges, "sourceRanges");
-      this.sourceTags = checkNotNull(sourceTags, "sourceTags");
-      this.targetTags = checkNotNull(targetTags, "targetTags");
    }
 
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getAllowed()
+    */
    public Set<Firewall.Rule> getAllowed() {
-      return allowed;
+      return allowed.build();
    }
 
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getAllowed()
+    */
+   public FirewallOptions addAllowedRule(Firewall.Rule allowedRule) {
+      this.allowed.add(allowedRule);
+      return this;
+   }
+
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getAllowed()
+    */
+   public FirewallOptions allowedRules(Set<Firewall.Rule> allowedRules) {
+      this.allowed = ImmutableSet.builder();
+      this.allowed.addAll(allowedRules);
+      return this;
+   }
+
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getName()
+    */
    public String getName() {
       return name;
    }
 
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getNetwork()
+    */
    public URI getNetwork() {
       return network;
    }
 
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getSourceRanges()
+    */
    public Set<String> getSourceRanges() {
-      return sourceRanges;
+      return sourceRanges.build();
    }
 
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getSourceRanges()
+    */
+   public FirewallOptions addSourceRange(String sourceRange) {
+      this.sourceRanges.add(sourceRange);
+      return this;
+   }
+
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getSourceRanges()
+    */
+   public FirewallOptions sourceRanges(Set<String> sourceRanges) {
+      this.sourceRanges = ImmutableSet.builder();
+      this.sourceRanges.addAll(sourceRanges);
+      return this;
+   }
+
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getSourceTags()
+    */
    public Set<String> getSourceTags() {
-      return sourceTags;
+      return sourceTags.build();
    }
 
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getSourceTags()
+    */
+   public FirewallOptions addSourceTag(String sourceTag) {
+      this.sourceTags.add(sourceTag);
+      return this;
+   }
+
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getSourceTags()
+    */
+   public FirewallOptions sourceTags(Set<String> sourceTags) {
+      this.sourceTags = ImmutableSet.builder();
+      return this;
+   }
+
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getTargetTags()
+    */
    public Set<String> getTargetTags() {
-      return targetTags;
+      return targetTags.build();
+   }
+
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getTargetTags()
+    */
+   public FirewallOptions addTargetTag(String targetTag) {
+      this.targetTags.add(targetTag);
+      return this;
+   }
+
+   /**
+    * @see org.jclouds.googlecompute.domain.Firewall#getTargetTags()
+    */
+   public FirewallOptions targetTags(Set<String> targetTags) {
+      this.targetTags = ImmutableSet.builder();
+      this.targetTags.addAll(targetTags);
+      return this;
    }
 
    public static Builder builder() {
       return new Builder();
    }
 
-   public Builder toBuilder() {
-      return new Builder()
-              .name(this.name)
-              .sourceRanges(this.sourceRanges)
-              .sourceTags(this.sourceTags)
-              .targetTags(this.targetTags)
-              .allowedRules(this.allowed);
-   }
-
    public static final class Builder {
 
-      private String name;
-      private URI network;
-      private ImmutableSet.Builder<String> sourceRanges = ImmutableSet.builder();
-      private ImmutableSet.Builder<String> sourceTags = ImmutableSet.builder();
-      private ImmutableSet.Builder<String> targetTags = ImmutableSet.builder();
-      private ImmutableSet.Builder<Firewall.Rule> allowed = ImmutableSet.builder();
 
-      public Builder name(String name) {
-         this.name = name;
-         return this;
+      public FirewallOptions forNameAndNetwork(String name, URI network) {
+         return new FirewallOptions(name, network);
+
       }
-
-      public Builder network(URI network) {
-         this.network = network;
-         return this;
-      }
-
-      public Builder addSourceRange(String sourceRange) {
-         this.sourceRanges.add(sourceRange);
-         return this;
-      }
-
-      public Builder sourceRanges(Set<String> sourceRanges) {
-         this.sourceRanges = ImmutableSet.builder();
-         this.sourceRanges.addAll(sourceRanges);
-         return this;
-      }
-
-      public Builder addTargetTag(String targetTag) {
-         this.targetTags.add(targetTag);
-         return this;
-      }
-
-      public Builder targetTags(Set<String> targetTags) {
-         this.targetTags = ImmutableSet.builder();
-         this.targetTags.addAll(targetTags);
-         return this;
-      }
-
-      public Builder addSourceTag(String sourceTag) {
-         this.sourceTags.add(sourceTag);
-         return this;
-      }
-
-      public Builder sourceTags(Set<String> sourceTags) {
-         this.sourceTags = ImmutableSet.builder();
-         return this;
-      }
-
-      public Builder addAllowedRule(Firewall.Rule allowedRule) {
-         this.allowed.add(allowedRule);
-         return this;
-      }
-
-      public Builder allowedRules(Set<Firewall.Rule> allowedRules) {
-         this.allowed = ImmutableSet.builder();
-         this.allowed.addAll(allowedRules);
-         return this;
-      }
-
-      public FirewallOptions build() {
-         return new FirewallOptions(name, network, sourceRanges.build(), sourceTags.build(), targetTags.build(),
-                 allowed.build());
-      }
-
    }
 }

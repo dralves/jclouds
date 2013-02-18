@@ -119,8 +119,11 @@ public final class Firewall extends Resource {
     */
    protected Objects.ToStringHelper string() {
       return super.string()
-              .add("network", network).add("sourceRanges", sourceRanges).add("sourceTags",
-                      sourceTags).add("targetTags", targetTags).add("allowed", allowed);
+              .add("network", network)
+              .add("sourceRanges", sourceRanges)
+              .add("sourceTags", sourceTags)
+              .add("targetTags", targetTags)
+              .add("allowed", allowed);
    }
 
    /**
